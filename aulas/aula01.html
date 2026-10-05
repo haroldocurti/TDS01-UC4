@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula 01: TechStore Brasil vai para produção — seu servidor em contêineres (05/10/2026)</title>
+<style>
+:root{--azul:#004A8D;--laranja:#F7941D;--bg:#f6f8fb;--card:#fff;--tx:#1d2733;--mut:#5b6775;--ln:#dde3ea;--soft:#e8f0fa;--code:#0f1720;--codetx:#e6edf3;--ok:#1e7d4f}
+@media (prefers-color-scheme:dark){:root{--bg:#10151c;--card:#171f29;--tx:#e6ebf1;--mut:#9aa7b5;--ln:#2a3542;--soft:#1c3149;--azul:#7db3ee;--ok:#5cc28f}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:"Open Sans",system-ui,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;font-size:16px}
+a{color:var(--azul)}
+.top{background:#004A8D;color:#fff;border-bottom:4px solid var(--laranja);padding:20px 16px}
+.top .in{max-width:1180px;margin:0 auto}
+.top a{color:#fff;opacity:.85;font-size:.9rem;text-decoration:none}.top a:hover{opacity:1;text-decoration:underline}
+.top h1{font-family:Montserrat,system-ui,sans-serif;font-size:1.45rem;margin:6px 0 4px;line-height:1.25}
+.top .meta{opacity:.9;font-size:.92rem}
+.prog{height:8px;background:rgba(255,255,255,.25);border-radius:99px;margin-top:12px;overflow:hidden}
+.prog span{display:block;height:100%;width:0;background:var(--laranja);transition:width .3s}
+.progtx{font-size:.82rem;margin-top:4px;opacity:.9}
+.wrap{max-width:1180px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:980px){.wrap{grid-template-columns:260px 1fr}}
+nav.toc{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;align-self:start}
+@media(min-width:980px){nav.toc{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+nav.toc h2{font-family:Montserrat,system-ui,sans-serif;font-size:.85rem;color:var(--mut);margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:2px 0}
+nav.toc a{display:flex;gap:8px;align-items:flex-start;text-decoration:none;color:var(--tx);padding:5px 8px;border-radius:6px;font-size:.9rem}
+nav.toc a:hover,nav.toc a.ativo{background:var(--soft);color:var(--azul)}
+nav.toc .ck{flex:0 0 auto;width:1.1em;color:var(--ok);font-weight:700}
+.campos{background:var(--card);border:2px solid var(--laranja);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.campos h2{margin:0 0 6px;font-size:1rem}
+.campos p{margin:0 0 10px;color:var(--mut);font-size:.9rem}
+.campos .grid{display:flex;flex-wrap:wrap;gap:12px}
+.campos label{display:flex;flex-direction:column;font-size:.85rem;font-weight:600;gap:4px}
+.campos input{font:inherit;padding:8px 10px;border:1px solid var(--ln);border-radius:6px;background:var(--bg);color:var(--tx);min-width:180px}
+main{min-width:0}
+.wrap>div,.wrap>nav{min-width:0}
+main section.etapa{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px 16px;margin-bottom:18px}
+main section.etapa.feita{border-color:var(--ok)}
+main h2{font-family:Montserrat,system-ui,sans-serif;color:var(--azul);font-size:1.2rem;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+main h3{font-family:Montserrat,system-ui,sans-serif;font-size:1.02rem;margin-top:22px}
+.feito{font-family:"Open Sans",system-ui,sans-serif;font-size:.82rem;font-weight:600;color:var(--tx);display:inline-flex;gap:6px;align-items:center;border:1px solid var(--ln);border-radius:99px;padding:4px 12px;cursor:pointer;user-select:none}
+.feito input{width:16px;height:16px;accent-color:var(--ok)}
+section.feita .feito{background:var(--ok);color:#fff;border-color:var(--ok)}
+pre{position:relative;background:var(--code);color:var(--codetx);border-radius:8px;padding:38px 16px 14px;overflow-x:auto;font-size:.86rem;line-height:1.45}
+pre code{background:none;color:inherit;padding:0}
+code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+.copiar{position:absolute;top:8px;right:8px;font:inherit;font-size:.75rem;padding:3px 10px;border-radius:6px;border:1px solid #3a4756;background:#1d2733;color:#e6edf3;cursor:pointer}
+.copiar:hover{background:#2b3846}
+.tab{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--ln);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-family:Montserrat,system-ui,sans-serif;font-size:.82rem}
+blockquote{margin:12px 0;padding:10px 14px;border-left:4px solid var(--laranja);background:var(--soft);border-radius:0 8px 8px 0}
+blockquote p{margin:0}
+hr{display:none}
+mark{background:#ffd9a3;color:#1d2733;border-radius:3px;padding:0 2px}
+.intro{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px;margin-bottom:18px}
+footer{max-width:1180px;margin:0 auto;padding:8px 16px 28px;color:var(--mut);font-size:.82rem}
+@media print{nav.toc,.campos,.copiar,.feito{display:none}.wrap{display:block}body{background:#fff}}
+</style></head><body>
+<header class="top"><div class="in">
+<a href="../index.html">&larr; Todas as aulas — UC4 — Administrar e implantar servidores de banco de dados</a>
+<h1>Guia da Aula 01: TechStore Brasil vai para produção — seu servidor em contêineres (05/10/2026)</h1>
+<div class="meta">UC4 — Administrar e implantar servidores de banco de dados · 05/10/2026</div>
+<div class="prog" aria-hidden="true"><span></span></div><div class="progtx" aria-live="polite"></div>
+</div></header>
+<div class="wrap">
+<nav class="toc" aria-label="Etapas da aula"><h2>Etapas</h2><ol><li><a href="#e-1-ponto-de-partida"><span class="ck"></span><span>1. Ponto de partida</span></a></li><li><a href="#e-2-sua-identificação-na-turma"><span class="ck"></span><span>2. Sua identificação na turma</span></a></li><li><a href="#e-3-os-conceitos-de-hoje"><span class="ck"></span><span>3. Os conceitos de hoje</span></a></li><li><a href="#e-4-prática-1-seu-servidor-web-nginx"><span class="ck"></span><span>4. Prática 1: seu servidor web (nginx)</span></a></li><li><a href="#e-5-prática-2-seu-servidor-mysql-na-rede-da-turma"><span class="ck"></span><span>5. Prática 2: seu servidor MySQL na rede da turma</span></a></li><li><a href="#e-6-prática-3-phpmyadmin-da-turma"><span class="ck"></span><span>6. Prática 3: phpMyAdmin da turma</span></a></li><li><a href="#e-7-prática-4-carga-da-base-techstore"><span class="ck"></span><span>7. Prática 4: carga da base TechStore</span></a></li><li><a href="#e-8-se-algo-der-errado"><span class="ck"></span><span>8. Se algo der errado</span></a></li><li><a href="#e-9-checkpoint-de-saída-entregue-ao-professor"><span class="ck"></span><span>9. Checkpoint de saída (entregue ao professor)</span></a></li><li><a href="#e-10-reflexão"><span class="ck"></span><span>10. Reflexão</span></a></li></ol></nav>
+<div>
+<section class="campos"><h2>Personalize os comandos</h2><p>Preencha e os comandos e tabelas desta página passam a usar os seus dados. Fica salvo só neste navegador.</p><form id="campos-form" class="grid" onsubmit="return false"><label>Seu número (01 a 30)<input name="NN" autocomplete="off"></label><label>IP da VM<input name="IP-da-VM" autocomplete="off"></label><label>Seu usuário Linux<input name="SEU_USUARIO" autocomplete="off"></label><label>Seu nome<input name="SEU NOME" autocomplete="off"></label></form></section>
+<main><div class="intro"><p>A TechStore Brasil, a loja que você modelou na UC3, vai sair do laboratório e entrar em produção. Nesta UC, você faz parte da equipe de banco de dados que vai preparar esse servidor.</p>
+<p>Hoje você vai montar o seu ambiente: um servidor web (nginx) e um servidor de banco (MySQL), acessíveis pela rede, com a base da TechStore carregada.</p>
+<p><strong>Para que serve esta aula:</strong> entender e configurar um ambiente de banco de dados em contêineres: imagens, portas, rede e armazenamento.</p>
+<p><strong>O que vamos observar:</strong> se você sobe e configura os serviços com os parâmetros certos, explica o que cada parte do comando faz e confere se tudo funciona.</p>
+<hr></div>
+<section class="etapa" id="e-1-ponto-de-partida"><h2><span>1. Ponto de partida</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Responda para você mesmo(a), sem pesquisar:</p>
+<ol>
+<li>Qual a diferença entre uma <strong>imagem</strong> e um <strong>contêiner</strong>?</li>
+<li>Se você apagar o contêiner do MySQL, o que acontece com os dados?</li>
+<li>Como alguém em outra máquina chega até o seu servidor?</li>
+</ol>
+<p>Guarde as respostas. Você vai voltar nelas no fim da aula.</p>
+<hr>
+</section>
+<section class="etapa" id="e-2-sua-identificação-na-turma"><h2><span>2. Sua identificação na turma</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>O professor vai passar a tabela da turma. Anote o seu número (NN, de 01 a 30) e as suas portas:</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>O quê</th>
+<th>Regra</th>
+<th>Exemplo (número 07)</th>
+<th>Minhas portas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Servidor web (nginx)</td>
+<td>80<strong>NN</strong></td>
+<td>8007</td>
+<td></td>
+</tr>
+<tr>
+<td>Servidor MySQL</td>
+<td>330<strong>NN</strong></td>
+<td>33007</td>
+<td></td>
+</tr>
+<tr>
+<td>phpMyAdmin da turma</td>
+<td>8080 (igual para todos)</td>
+<td>8080</td>
+<td>8080</td>
+</tr>
+<tr>
+<td>IP da VM</td>
+<td>no quadro</td>
+<td>192.168.x.x</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>Em todos os comandos abaixo, troque <strong>NN</strong> pelo seu número. <code>$USER</code> é trocado sozinho pelo seu nome de usuário Linux.</p>
+</blockquote>
+<p>Entre na VM: <code>ssh seu_usuario@IP-da-VM</code></p>
+<hr>
+</section>
+<section class="etapa" id="e-3-os-conceitos-de-hoje"><h2><span>3. Os conceitos de hoje</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<pre><code> Sua máquina / celular / colega
+        │  http://IP-da-VM:80NN        http://IP-da-VM:8080
+        ▼                               ▼
+┌──────────────────────────── VM Ubuntu (Docker) ─────────────────────────────┐
+│                                                                              │
+│  porta 80NN ──► [ nginx-$USER ]:80                                           │
+│                                                                              │
+│  ┌──────────────── rede-turma (rede Docker) ────────────────┐               │
+│  │                                                           │               │
+│  │  porta 8080  ──► [ pma-turma ]:80  ──&quot;mysql-$USER&quot;──►  [ mysql-$USER ]:3306 ◄── porta 330NN
+│  │                                                           │      │        │
+│  └───────────────────────────────────────────────────────────┘      ▼        │
+│                                                          volume dados-$USER  │
+└──────────────────────────────────────────────────────────────────────────────┘
+</code></pre>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Conceito</th>
+<th>Em uma frase</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Imagem</strong></td>
+<td>O "molde" pronto, baixado do Docker Hub (ex.: <code>nginx</code>, <code>mysql:8.4</code>). Não muda.</td>
+</tr>
+<tr>
+<td><strong>Contêiner</strong></td>
+<td>Uma cópia da imagem em execução. Você cria, para e apaga.</td>
+</tr>
+<tr>
+<td><strong>Porta</strong></td>
+<td>O "número da porta de entrada". <code>-p 8007:80</code> quer dizer: quem bater na porta <strong>8007 da VM</strong> é levado para a porta <strong>80 do contêiner</strong>.</td>
+</tr>
+<tr>
+<td><strong>Rede Docker</strong></td>
+<td>Uma rede interna entre contêineres. Dentro dela, um contêiner acha o outro <strong>pelo nome</strong> (DNS), sem precisar de IP nem de porta publicada.</td>
+</tr>
+<tr>
+<td><strong>Volume</strong></td>
+<td>Uma pasta guardada fora do contêiner. Se o contêiner for apagado, o volume continua. É ali que os dados do banco devem ficar.</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+</section>
+<section class="etapa" id="e-4-prática-1-seu-servidor-web-nginx"><h2><span>4. Prática 1: seu servidor web (nginx)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<h3>4.1 Subir o contêiner</h3>
+<pre><code class="language-bash">docker run -d --name nginx-$USER -p 80NN:80 nginx
+</code></pre>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker run</code></td>
+<td>Cria e inicia um contêiner a partir de uma imagem.</td>
+</tr>
+<tr>
+<td><code>-d</code></td>
+<td><em>Detached</em>: roda em segundo plano e devolve o terminal.</td>
+</tr>
+<tr>
+<td><code>--name nginx-$USER</code></td>
+<td>Dá um nome ao contêiner. Usar o seu usuário evita conflito com os colegas.</td>
+</tr>
+<tr>
+<td><code>-p 80NN:80</code></td>
+<td>Publica a porta: <strong>porta da VM : porta do contêiner</strong>. O nginx escuta na 80 por dentro.</td>
+</tr>
+<tr>
+<td><code>nginx</code></td>
+<td>A imagem usada (sem versão = <code>latest</code>).</td>
+</tr>
+</tbody>
+</table></div>
+<p>Confira:</p>
+<pre><code class="language-bash">docker ps --filter name=$USER      # só os seus contêineres
+docker logs nginx-$USER            # o que o nginx escreveu ao iniciar
+</code></pre>
+<p>Abra no navegador: <code>http://IP-da-VM:80NN</code>. Você deve ver "Welcome to nginx!".</p>
+<h3>4.2 Entrar no contêiner e criar a sua página</h3>
+<pre><code class="language-bash">docker exec -it nginx-$USER bash
+</code></pre>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker exec</code></td>
+<td>Executa um comando <strong>dentro</strong> de um contêiner que já está rodando.</td>
+</tr>
+<tr>
+<td><code>-it</code></td>
+<td>Modo interativo com terminal (para você digitar).</td>
+</tr>
+<tr>
+<td><code>bash</code></td>
+<td>O comando executado: um shell.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Agora você está <strong>dentro</strong> do contêiner (o prompt muda). Crie a página:</p>
+<pre><code class="language-bash">echo &quot;&lt;h1&gt;Servidor de $HOSTNAME&lt;/h1&gt;&lt;p&gt;Equipe de banco de dados da TechStore: SEU NOME&lt;/p&gt;&quot; &gt; /usr/share/nginx/html/index.html
+exit
+</code></pre>
+<p>Atualize o navegador. Depois abra a página de dois colegas, trocando só a porta.</p>
+<h3>4.3 Experimento: o que acontece se eu apagar o contêiner?</h3>
+<pre><code class="language-bash">docker rm -f nginx-$USER                         # -f para e apaga de uma vez
+docker run -d --name nginx-$USER -p 80NN:80 nginx
+</code></pre>
+<p>Abra a página. <strong>A sua página sumiu.</strong> Tudo o que é criado dentro do contêiner morre com ele.</p>
+<p>Agora, com um volume (uma pasta da sua home ligada ao contêiner):</p>
+<pre><code class="language-bash">docker rm -f nginx-$USER
+mkdir -p ~/site
+echo &quot;&lt;h1&gt;Página de SEU NOME que sobrevive&lt;/h1&gt;&quot; &gt; ~/site/index.html
+chmod o+x ~ &amp;&amp; chmod -R o+r ~/site
+docker run -d --name nginx-$USER -p 80NN:80 -v ~/site:/usr/share/nginx/html nginx
+</code></pre>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-v ~/site:/usr/share/nginx/html</code></td>
+<td>Liga a pasta <code>~/site</code> da VM à pasta do site dentro do contêiner.</td>
+</tr>
+<tr>
+<td><code>chmod ...</code></td>
+<td>Deixa o nginx ler a sua pasta. Sem isso, aparece <strong>403 Forbidden</strong>.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Apague e suba de novo com o mesmo comando. <strong>A página continua.</strong> Guarde isso: com o banco de dados é igual.</p>
+<hr>
+</section>
+<section class="etapa" id="e-5-prática-2-seu-servidor-mysql-na-rede-da-turma"><h2><span>5. Prática 2: seu servidor MySQL na rede da turma</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<h3>5.1 Conhecer a rede</h3>
+<pre><code class="language-bash">docker network ls
+docker network inspect rede-turma
+</code></pre>
+<p>A <code>rede-turma</code> foi criada pelo professor. O phpMyAdmin da turma já está nela. O seu MySQL vai entrar nela também.</p>
+<h3>5.2 Definir a senha sem deixar no histórico</h3>
+<pre><code class="language-bash">read -s -p &quot;Senha do root do MySQL: &quot; SENHA; echo
+</code></pre>
+<p><code>read -s</code> lê a senha sem mostrar na tela e guarda na variável <code>SENHA</code>. Use uma senha só sua.</p>
+<h3>5.3 Subir o MySQL</h3>
+<pre><code class="language-bash">docker run -d --name mysql-$USER \
+  --network rede-turma \
+  -p 330NN:3306 \
+  -v dados-$USER:/var/lib/mysql \
+  -e MYSQL_ROOT_PASSWORD=&quot;$SENHA&quot; \
+  --memory 512m \
+  --restart unless-stopped \
+  mysql:8.4
+</code></pre>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--network rede-turma</code></td>
+<td>Coloca o contêiner na rede da turma. O phpMyAdmin passa a achar o banco pelo nome <code>mysql-$USER</code>.</td>
+</tr>
+<tr>
+<td><code>-p 330NN:3306</code></td>
+<td>Publica a porta do MySQL (3306 por dentro) na porta 330NN da VM, para acesso por programas de fora (ex.: Workbench, DBeaver).</td>
+</tr>
+<tr>
+<td><code>-v dados-$USER:/var/lib/mysql</code></td>
+<td>Volume nomeado: os arquivos do banco ficam fora do contêiner.</td>
+</tr>
+<tr>
+<td><code>-e MYSQL_ROOT_PASSWORD=...</code></td>
+<td>Variável de ambiente: define a senha do root na primeira inicialização.</td>
+</tr>
+<tr>
+<td><code>--memory 512m</code></td>
+<td>Limite de memória. A VM é compartilhada por toda a turma.</td>
+</tr>
+<tr>
+<td><code>--restart unless-stopped</code></td>
+<td>Se a VM reiniciar, o contêiner volta sozinho (menos <em>downtime</em>).</td>
+</tr>
+<tr>
+<td><code>mysql:8.4</code></td>
+<td>Imagem com versão fixa. Em produção, não se usa <code>latest</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Espere o banco ficar pronto (leva cerca de 30 segundos na primeira vez):</p>
+<pre><code class="language-bash">docker logs -f mysql-$USER
+</code></pre>
+<p>Quando aparecer <code>ready for connections</code> com <code>port: 3306</code>, aperte <strong>Ctrl + C</strong> para sair do log (o contêiner continua rodando).</p>
+<p>Confira em que rede e porta ele está:</p>
+<pre><code class="language-bash">docker ps --filter name=$USER
+docker network inspect rede-turma --format '{{range .Containers}}{{.Name}} {{end}}'
+</code></pre>
+<hr>
+</section>
+<section class="etapa" id="e-6-prática-3-phpmyadmin-da-turma"><h2><span>6. Prática 3: phpMyAdmin da turma</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ol>
+<li>Abra <code>http://IP-da-VM:8080</code>.</li>
+<li><strong>Servidor:</strong> <code>mysql-SEU_USUARIO</code> (o nome do seu contêiner).</li>
+<li><strong>Usuário:</strong> <code>root</code> | <strong>Senha:</strong> a sua.</li>
+</ol>
+<blockquote>
+<p>Por que funciona só com o nome? Porque o phpMyAdmin e o seu MySQL estão na mesma rede Docker, e o Docker resolve nomes de contêiner como se fossem endereços.</p>
+</blockquote>
+<hr>
+</section>
+<section class="etapa" id="e-7-prática-4-carga-da-base-techstore"><h2><span>7. Prática 4: carga da base TechStore</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>O arquivo está na VM em <code>/srv/techstore/loja_teste_completo.sql</code>. Carregue pelo terminal:</p>
+<pre><code class="language-bash">docker exec -i -e MYSQL_PWD=&quot;$SENHA&quot; mysql-$USER \
+  mysql -uroot --default-character-set=utf8mb4 &lt; /srv/techstore/loja_teste_completo.sql
+</code></pre>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker exec -i</code></td>
+<td>Executa o cliente <code>mysql</code> dentro do contêiner, recebendo dados pela entrada padrão.</td>
+</tr>
+<tr>
+<td><code>-e MYSQL_PWD=...</code></td>
+<td>Passa a senha ao cliente sem digitar no comando.</td>
+</tr>
+<tr>
+<td><code>--default-character-set=utf8mb4</code></td>
+<td>Garante os acentos corretos.</td>
+</tr>
+<tr>
+<td><code>&lt; arquivo.sql</code></td>
+<td>Envia o conteúdo do arquivo da VM para dentro do cliente.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Valide pelo terminal:</p>
+<pre><code class="language-bash">docker exec -it -e MYSQL_PWD=&quot;$SENHA&quot; mysql-$USER mysql -uroot loja_teste -e &quot;
+SELECT 'clientes' tabela, COUNT(*) total FROM clientes
+UNION ALL SELECT 'produtos', COUNT(*) FROM produtos
+UNION ALL SELECT 'pedidos', COUNT(*) FROM pedidos
+UNION ALL SELECT 'itens_pedido', COUNT(*) FROM itens_pedido;&quot;
+</code></pre>
+<p>Resultado esperado: <strong>25</strong> clientes, <strong>68</strong> produtos, <strong>27</strong> pedidos, <strong>35</strong> itens.</p>
+<p>Depois confira o mesmo banco no phpMyAdmin.</p>
+<hr>
+</section>
+<section class="etapa" id="e-8-se-algo-der-errado"><h2><span>8. Se algo der errado</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Mensagem</th>
+<th>O que fazer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port is already allocated</code></td>
+<td>A porta está em uso. Confira o seu número na tabela e <code>docker ps -a --filter name=$USER</code>.</td>
+</tr>
+<tr>
+<td><code>container name ... is already in use</code></td>
+<td><code>docker rm -f NOME</code> e suba de novo.</td>
+</tr>
+<tr>
+<td><code>403 Forbidden</code> no nginx</td>
+<td>Rode <code>chmod o+x ~ &amp;&amp; chmod -R o+r ~/site</code>.</td>
+</tr>
+<tr>
+<td>phpMyAdmin: <em>Connection refused</em> ou <em>getaddrinfo failed</em></td>
+<td>O MySQL ainda está iniciando (veja o log) ou não está na rede: <code>docker network connect rede-turma mysql-$USER</code>.</td>
+</tr>
+<tr>
+<td>Acentos estranhos</td>
+<td>Refaça a carga com <code>--default-character-set=utf8mb4</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Regra de convivência:</strong> a VM é de todos. Só mexa em contêineres com o <strong>seu</strong> nome.</p>
+<hr>
+</section>
+<section class="etapa" id="e-9-checkpoint-de-saída-entregue-ao-professor"><h2><span>9. Checkpoint de saída (entregue ao professor)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ol>
+<li>Print da sua página nginx aberta pelo IP da VM, com o seu nome.</li>
+<li>Print do resultado das contagens (25, 68, 27, 35).</li>
+<li>Responda em 2 ou 3 linhas:
+   - Volte às perguntas do início. O que mudou nas suas respostas?
+   - Hoje, quem consegue acessar o seu banco? Isso é seguro para uma loja em produção?</li>
+</ol>
+<hr>
+</section>
+<section class="etapa" id="e-10-reflexão"><h2><span>10. Reflexão</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p><strong>Autonomia digital:</strong> em que momento da aula você precisou ler uma mensagem de erro ou a documentação para resolver sozinho(a)? Como foi?</p>
+<p><strong>Para treinar em casa (opcional):</strong> leia a página das imagens <code>mysql</code> e <code>phpmyadmin</code> no Docker Hub e encontre outras variáveis de ambiente que elas aceitam.</p></section></main>
+</div></div>
+<footer>Material da UC para estudantes. Marque as etapas conforme avança; o progresso fica salvo neste navegador.</footer>
+<script type="application/json" id="campos-def">[{"chave": "NN", "rotulo": "Seu número (01 a 30)"}, {"chave": "IP-da-VM", "rotulo": "IP da VM"}, {"chave": "SEU_USUARIO", "rotulo": "Seu usuário Linux"}, {"chave": "SEU NOME", "rotulo": "Seu nome"}]</script>
+<script>
+(function(){
+  var CHAVE='educagente:'+location.pathname;
+  var campos=JSON.parse(document.getElementById('campos-def').textContent||'[]');
+  var main=document.querySelector('main');
+  var modelo=main.innerHTML;
+  function ler(k,d){try{var v=localStorage.getItem(CHAVE+':'+k);return v===null?d:JSON.parse(v);}catch(e){return d;}}
+  function gravar(k,v){try{localStorage.setItem(CHAVE+':'+k,JSON.stringify(v));}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function reRegex(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+  function personalizar(){
+    var valores=ler('campos',{});var out=modelo;
+    campos.forEach(function(c){
+      var v=(valores[c.chave]||'').trim(); if(!v) return;
+      var re=new RegExp(reRegex(c.chave),'g');
+      out=out.replace(/(<code[^>]*>)([\s\S]*?)(<\/code>)|(<td[^>]*>)([\s\S]*?)(<\/td>)/g,function(m,a1,b1,c1,a2,b2,c2){
+        if(a1) return a1+b1.replace(re,'<mark>'+esc(v)+'</mark>')+c1;
+        return a2+b2.replace(re,'<mark>'+esc(v)+'</mark>')+c2;});
+    });
+    main.innerHTML=out; montar();
+  }
+  function montar(){
+    main.querySelectorAll('pre').forEach(function(pre){
+      var b=document.createElement('button');b.className='copiar';b.type='button';b.textContent='Copiar';
+      b.addEventListener('click',function(){
+        var t=pre.querySelector('code').innerText;
+        var ok=function(){b.textContent='Copiado!';setTimeout(function(){b.textContent='Copiar';},1500);};
+        if(navigator.clipboard){navigator.clipboard.writeText(t).then(ok,function(){});}
+        else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok();}catch(e){}document.body.removeChild(ta);}
+      });
+      pre.appendChild(b);
+    });
+    var feitos=ler('feitos',{});
+    main.querySelectorAll('section.etapa').forEach(function(s){
+      var cb=s.querySelector('.feito input'); if(!cb) return;
+      cb.checked=!!feitos[s.id]; s.classList.toggle('feita',cb.checked);
+      cb.addEventListener('change',function(){var f=ler('feitos',{});f[s.id]=cb.checked;gravar('feitos',f);s.classList.toggle('feita',cb.checked);progresso();});
+    });
+    progresso();
+  }
+  function progresso(){
+    var secs=main.querySelectorAll('section.etapa'),n=0;
+    var feitos=ler('feitos',{});
+    secs.forEach(function(s){if(feitos[s.id])n++;var a=document.querySelector('nav.toc a[href="#'+s.id+'"] .ck');if(a)a.textContent=feitos[s.id]?'✓':'';});
+    var p=secs.length?Math.round(100*n/secs.length):0;
+    document.querySelector('.prog span').style.width=p+'%';
+    document.querySelector('.progtx').textContent=n+' de '+secs.length+' etapas concluídas ('+p+'%)';
+    gravar('progresso',p);
+  }
+  var form=document.getElementById('campos-form');
+  if(form){
+    var valores=ler('campos',{});
+    form.querySelectorAll('input').forEach(function(inp){
+      inp.value=valores[inp.name]||'';
+      inp.addEventListener('input',function(){var v=ler('campos',{});v[inp.name]=inp.value;gravar('campos',v);personalizar();});
+    });
+  }
+  personalizar();
+  if('IntersectionObserver' in window){
+    var links={};document.querySelectorAll('nav.toc a').forEach(function(a){links[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){Object.keys(links).forEach(function(k){links[k].classList.remove('ativo');});var l=links[e.target.id];if(l)l.classList.add('ativo');}});},{rootMargin:'-20% 0px -70% 0px'});
+    document.querySelectorAll('main section.etapa').forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body></html>

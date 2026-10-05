@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UC4 — Administrar e implantar servidores de banco de dados</title>
+<style>
+:root{--azul:#004A8D;--laranja:#F7941D;--bg:#f6f8fb;--card:#fff;--tx:#1d2733;--mut:#5b6775;--ln:#dde3ea;--soft:#e8f0fa;--code:#0f1720;--codetx:#e6edf3;--ok:#1e7d4f}
+@media (prefers-color-scheme:dark){:root{--bg:#10151c;--card:#171f29;--tx:#e6ebf1;--mut:#9aa7b5;--ln:#2a3542;--soft:#1c3149;--azul:#7db3ee;--ok:#5cc28f}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:"Open Sans",system-ui,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;font-size:16px}
+a{color:var(--azul)}
+.top{background:#004A8D;color:#fff;border-bottom:4px solid var(--laranja);padding:20px 16px}
+.top .in{max-width:1180px;margin:0 auto}
+.top a{color:#fff;opacity:.85;font-size:.9rem;text-decoration:none}.top a:hover{opacity:1;text-decoration:underline}
+.top h1{font-family:Montserrat,system-ui,sans-serif;font-size:1.45rem;margin:6px 0 4px;line-height:1.25}
+.top .meta{opacity:.9;font-size:.92rem}
+.prog{height:8px;background:rgba(255,255,255,.25);border-radius:99px;margin-top:12px;overflow:hidden}
+.prog span{display:block;height:100%;width:0;background:var(--laranja);transition:width .3s}
+.progtx{font-size:.82rem;margin-top:4px;opacity:.9}
+.wrap{max-width:1180px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:980px){.wrap{grid-template-columns:260px 1fr}}
+nav.toc{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;align-self:start}
+@media(min-width:980px){nav.toc{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+nav.toc h2{font-family:Montserrat,system-ui,sans-serif;font-size:.85rem;color:var(--mut);margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:2px 0}
+nav.toc a{display:flex;gap:8px;align-items:flex-start;text-decoration:none;color:var(--tx);padding:5px 8px;border-radius:6px;font-size:.9rem}
+nav.toc a:hover,nav.toc a.ativo{background:var(--soft);color:var(--azul)}
+nav.toc .ck{flex:0 0 auto;width:1.1em;color:var(--ok);font-weight:700}
+.campos{background:var(--card);border:2px solid var(--laranja);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.campos h2{margin:0 0 6px;font-size:1rem}
+.campos p{margin:0 0 10px;color:var(--mut);font-size:.9rem}
+.campos .grid{display:flex;flex-wrap:wrap;gap:12px}
+.campos label{display:flex;flex-direction:column;font-size:.85rem;font-weight:600;gap:4px}
+.campos input{font:inherit;padding:8px 10px;border:1px solid var(--ln);border-radius:6px;background:var(--bg);color:var(--tx);min-width:180px}
+main{min-width:0}
+.wrap>div,.wrap>nav{min-width:0}
+main section.etapa{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px 16px;margin-bottom:18px}
+main section.etapa.feita{border-color:var(--ok)}
+main h2{font-family:Montserrat,system-ui,sans-serif;color:var(--azul);font-size:1.2rem;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+main h3{font-family:Montserrat,system-ui,sans-serif;font-size:1.02rem;margin-top:22px}
+.feito{font-family:"Open Sans",system-ui,sans-serif;font-size:.82rem;font-weight:600;color:var(--tx);display:inline-flex;gap:6px;align-items:center;border:1px solid var(--ln);border-radius:99px;padding:4px 12px;cursor:pointer;user-select:none}
+.feito input{width:16px;height:16px;accent-color:var(--ok)}
+section.feita .feito{background:var(--ok);color:#fff;border-color:var(--ok)}
+pre{position:relative;background:var(--code);color:var(--codetx);border-radius:8px;padding:38px 16px 14px;overflow-x:auto;font-size:.86rem;line-height:1.45}
+pre code{background:none;color:inherit;padding:0}
+code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+.copiar{position:absolute;top:8px;right:8px;font:inherit;font-size:.75rem;padding:3px 10px;border-radius:6px;border:1px solid #3a4756;background:#1d2733;color:#e6edf3;cursor:pointer}
+.copiar:hover{background:#2b3846}
+.tab{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--ln);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-family:Montserrat,system-ui,sans-serif;font-size:.82rem}
+blockquote{margin:12px 0;padding:10px 14px;border-left:4px solid var(--laranja);background:var(--soft);border-radius:0 8px 8px 0}
+blockquote p{margin:0}
+hr{display:none}
+mark{background:#ffd9a3;color:#1d2733;border-radius:3px;padding:0 2px}
+.intro{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px;margin-bottom:18px}
+footer{max-width:1180px;margin:0 auto;padding:8px 16px 28px;color:var(--mut);font-size:.82rem}
+@media print{nav.toc,.campos,.copiar,.feito{display:none}.wrap{display:block}body{background:#fff}}
+
+.hero{max-width:1180px;margin:0 auto;padding:20px 16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:16px;text-decoration:none;color:var(--tx);display:flex;flex-direction:column;gap:6px}
+.card:hover{border-color:var(--azul)}
+.card .n{font-family:Montserrat,system-ui,sans-serif;color:var(--azul);font-weight:700}
+.card .d{color:var(--mut);font-size:.85rem}
+.card .bar{height:6px;background:var(--soft);border-radius:99px;overflow:hidden;margin-top:auto}
+.card .bar span{display:block;height:100%;background:var(--ok);width:0}
+.box{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px 12px;margin:16px 0}
+.box h2{font-family:Montserrat,system-ui,sans-serif;color:var(--azul);font-size:1.1rem}
+</style></head><body>
+<header class="top"><div class="in"><div class="meta">TDS01 (9900358389)</div><h1>UC4 — Administrar e implantar servidores de banco de dados</h1><div class="meta">84 h · 24 aulas</div></div></header>
+<div class="hero">
+<div class="box"><h2>Sobre a UC</h2><p><strong>&quot;TechStore Brasil vai para produção&quot;</strong>. A turma passa a atuar como a equipe de banco de dados da <em>TechStore Brasil</em>, a loja que ela modelou e consultou na UC3 (base <code>loja_teste</code>). O banco precisa sair do laboratório e ir para produção: ganhar rotinas no servidor, regras de segurança e de LGPD, política de backup testada, monitoramento e um servidor configurado.</p><p>Cada bloco gera uma entrega parcial. No fim, as equipes reúnem tudo num <strong>Dossiê de Implantação</strong> (runbook do banco) e o testam num <strong>Game Day</strong>, uma simulação de incidente.</p></div>
+<h2 style="font-family:Montserrat,system-ui,sans-serif;color:var(--azul)">Aulas</h2>
+<div class="cards"><a class="card" href="aulas/aula01.html"><span class="n">Aula 01</span><span class="d">05/10/2026</span><span>TechStore Brasil vai para produção — seu servidor em contêineres</span><span class="d pp"></span><span class="bar"><span></span></span></a></div>
+<div class="box"><h2>Indicadores da UC</h2><ol><li>Planeja rotinas de backup e restore da base de dados, conforme especificações técnicas do sistema gerenciador de banco de dados (SGBD).</li><li>Planeja e escreve rotinas de procedimentos armazenados e triggers, de acordo com especificações da aplicação de acesso ao banco.</li><li>Desenvolve roteiro de segurança para os dados, de acordo com normas técnicas, políticas de segurança e melhores práticas em vigor.</li><li>Aplica regras de proteção de dados às informações armazenadas no banco, de acordo com a Lei Geral de Proteção de Dados (LGPD)</li><li>Elabora práticas de monitoramento de performance, conforme as funcionalidades e características do SGBD.</li><li>Configura o ambiente de implantação do SGBD e banco de dados, conforme as capacidades de hardware do servidor e storage necessárias ao projeto de sistema.</li></ol></div>
+<div class="box"><h2>Pastas do repositório</h2><ul>
+<li><a href="https://github.com/haroldocurti/TDS01-UC4/tree/main/Biblioteca">Biblioteca</a>: materiais extras (textos, exemplos, referências).</li>
+<li><a href="https://github.com/haroldocurti/TDS01-UC4/tree/main/Data">Data</a>: scripts, arquivos de carga e código usados nas aulas.</li>
+</ul></div>
+</div>
+<script>
+document.querySelectorAll('.card').forEach(function(c){
+  try{var p=JSON.parse(localStorage.getItem('educagente:'+new URL(c.href).pathname+':progresso')||'0');
+  c.querySelector('.bar span').style.width=p+'%';c.querySelector('.pp').textContent=p?p+'% concluído':'';}catch(e){}
+});
+</script>
+</body></html>
