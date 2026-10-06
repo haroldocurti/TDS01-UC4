@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Funções no MySQL (UDF) — Biblioteca UC4</title>
+<meta name="description" content="Material complementar da Aula 02 da UC4: funções definidas pelo usuário (UDF) no MySQL, com exemplos da TechStore Brasil, simuladores e quiz.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --azul:#004A8D;--laranja:#F7941D;--bg:#f6f8fb;--card:#fff;--tx:#1d2733;--mut:#5b6775;--ln:#dde3ea;--soft:#e8f0fa;
+  --code:#0f1720;--codetx:#e6edf3;--ok:#1e7d4f;--erro:#b3261e;--okbg:#e3f4ea;--errobg:#fbe7e5;
+  --s1:#1F64B0;--s2:#0F9A8A;--s3:#D9730D;--s4:#B0457A;--grid:#e6eaef;--surface:#fcfcfb;
+  --kw:#7cc4ff;--fn:#ffcf7a;--str:#a5e1a0;--num:#f5a3c7;--cm:#8b98a8;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#10151c;--card:#171f29;--tx:#e6ebf1;--mut:#9aa7b5;--ln:#2a3542;--soft:#1c3149;--azul:#7db3ee;--ok:#5cc28f;--erro:#ff8a80;
+  --okbg:#173a2a;--errobg:#41201f;--s1:#5B8EE6;--s2:#13A08A;--s3:#D9731A;--s4:#C25A92;--grid:#26313d;--surface:#171f29;
+}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:"Open Sans",system-ui,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;font-size:16px}
+a{color:var(--azul)}
+h1,h2,h3,.mont{font-family:Montserrat,system-ui,sans-serif}
+.top{background:#004A8D;color:#fff;border-bottom:4px solid var(--laranja);padding:20px 16px}
+.top .in{max-width:1180px;margin:0 auto}
+.top a{color:#fff;opacity:.85;font-size:.9rem;text-decoration:none}.top a:hover{opacity:1;text-decoration:underline}
+.top h1{font-size:1.5rem;margin:6px 0 4px;line-height:1.25}
+.top .meta{opacity:.9;font-size:.92rem}
+.wrap{max-width:1180px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:980px){.wrap{grid-template-columns:250px 1fr}}
+nav.toc{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;align-self:start}
+@media(min-width:980px){nav.toc{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+nav.toc h2{font-size:.85rem;color:var(--mut);margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
+nav.toc ol{margin:0;padding-left:20px}nav.toc li{margin:3px 0;font-size:.9rem}
+nav.toc a{text-decoration:none;color:var(--tx)}nav.toc a:hover{color:var(--azul);text-decoration:underline}
+main{min-width:0}
+section.bloco{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:6px 20px 18px;margin-bottom:18px}
+section.bloco>h2{color:var(--azul);font-size:1.25rem;margin:16px 0 8px}
+h3{font-size:1.02rem;margin:20px 0 6px}
+p{margin:10px 0}
+pre{position:relative;background:var(--code);color:var(--codetx);border-radius:8px;padding:34px 16px 14px;overflow-x:auto;font-size:.86rem;line-height:1.5;margin:12px 0}
+pre code{background:none;color:inherit;padding:0;font-size:inherit}
+code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+.copiar{position:absolute;top:6px;right:8px;font:inherit;font-size:.75rem;padding:3px 10px;border-radius:6px;border:1px solid #3a4756;background:#1d2733;color:#e6edf3;cursor:pointer}
+.copiar:hover{background:#2b3846}
+.kw{color:var(--kw);font-weight:600}.fn{color:var(--fn)}.str{color:var(--str)}.num{color:var(--num)}.cm{color:var(--cm);font-style:italic}
+.tab{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--ln);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-family:Montserrat,system-ui,sans-serif;font-size:.82rem}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.dica{margin:12px 0;padding:10px 14px;border-left:4px solid var(--laranja);background:var(--soft);border-radius:0 8px 8px 0}
+.dica p{margin:0}
+.painel{border:1px solid var(--ln);border-radius:10px;padding:14px;margin:14px 0;background:var(--bg)}
+.ctrl{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;margin-bottom:10px}
+.ctrl label{display:flex;flex-direction:column;font-size:.85rem;font-weight:600;gap:4px}
+input[type=number],input[type=text],select{font:inherit;padding:7px 10px;border:1px solid var(--ln);border-radius:6px;background:var(--card);color:var(--tx);min-width:120px}
+input[type=range]{width:220px;accent-color:var(--azul)}
+button.bt{font:inherit;font-weight:600;font-size:.9rem;padding:8px 16px;border-radius:8px;border:2px solid var(--azul);background:var(--azul);color:#fff;cursor:pointer}
+@media (prefers-color-scheme:dark){button.bt{background:#004A8D;border-color:#7db3ee}}
+button.bt.sec{background:transparent;color:var(--azul)}
+button.bt:focus-visible,button.op:focus-visible,.parte:focus-visible,.uf:focus-visible{outline:3px solid var(--laranja);outline-offset:2px}
+button.bt[aria-pressed=true]{background:var(--laranja);border-color:var(--laranja);color:#1d2733}
+.saida{font-family:Montserrat,system-ui,sans-serif;font-size:1.6rem;font-weight:700;color:var(--azul)}
+.kpis{display:flex;flex-wrap:wrap;gap:12px;margin:10px 0}
+.kpi{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:10px 14px;min-width:150px}
+.kpi b{display:block;font-family:Montserrat,system-ui,sans-serif;font-size:1.4rem;color:var(--tx)}
+.kpi span{font-size:.82rem;color:var(--mut)}
+svg text{font-family:"Open Sans",system-ui,sans-serif}
+svg text.halo{paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.svgbox{width:100%;overflow-x:auto}
+.svgbox svg{display:block;max-width:100%;height:auto}
+.tt{position:fixed;pointer-events:none;background:var(--card);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:8px 10px;font-size:.82rem;box-shadow:0 4px 14px rgba(0,0,0,.15);z-index:20;display:none;max-width:240px}
+.tt b{font-family:Montserrat,system-ui,sans-serif}
+.legenda{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem;margin:6px 0}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.legenda i{display:inline-block;width:14px;height:14px;border-radius:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+details{border:1px solid var(--ln);border-radius:8px;margin:8px 0;background:var(--bg)}
+details summary{cursor:pointer;padding:10px 14px;font-weight:600}
+details>div{padding:0 14px 10px}
+.anat{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:820px){.anat{grid-template-columns:1.2fr 1fr}}
+.anat pre{padding-top:16px;font-size:.95rem}
+.parte{cursor:pointer;border-radius:4px;padding:1px 2px;outline:1px dashed transparent;transition:background .2s}
+.parte:hover,.parte.sel{background:rgba(247,148,29,.28);outline-color:var(--laranja)}
+.expl{border:2px solid var(--laranja);border-radius:10px;padding:12px 14px;background:var(--card);min-height:150px}
+.expl h4{margin:0 0 6px;font-family:Montserrat,system-ui,sans-serif;color:var(--azul)}
+.ufs{display:flex;flex-direction:column;gap:8px}
+.ufs .reg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ufs .reg>span{font-size:.8rem;font-weight:700;color:var(--mut);width:100px}
+.uf{font:inherit;font-size:.8rem;font-weight:700;width:42px;padding:5px 0;border-radius:6px;border:2px solid var(--ln);background:var(--card);color:var(--tx);cursor:pointer}
+.uf[aria-pressed=true]{background:var(--azul);color:#fff;border-color:var(--azul)}
+@media (prefers-color-scheme:dark){.uf[aria-pressed=true]{background:#004A8D;border-color:#7db3ee}}
+.res-ok{color:var(--ok);font-weight:700}.res-erro{color:var(--erro);font-weight:700}
+tr.linha-ok td{background:var(--okbg)}tr.linha-erro td{background:var(--errobg)}
+.quiz .q{border:1px solid var(--ln);border-radius:10px;padding:12px 14px;margin:12px 0;background:var(--bg)}
+.quiz .q p.enun{margin:0 0 8px;font-weight:600}
+button.op{display:block;width:100%;text-align:left;font:inherit;font-size:.92rem;padding:8px 12px;margin:6px 0;border-radius:8px;border:1px solid var(--ln);background:var(--card);color:var(--tx);cursor:pointer}
+button.op:hover{border-color:var(--azul)}
+button.op.certa{border:2px solid var(--ok);background:var(--okbg)}
+button.op.errada{border:2px solid var(--erro);background:var(--errobg)}
+.fb{font-size:.9rem;margin-top:6px}
+.placar{font-family:Montserrat,system-ui,sans-serif;font-weight:700;font-size:1.1rem}
+.linhas-tab td{transition:background .25s}
+.linhas-tab tr.ativa td{background:rgba(247,148,29,.25)}
+.contador{font-family:Montserrat,system-ui,sans-serif;font-weight:700}
+.mail{font-family:ui-monospace,Consolas,monospace;font-size:1.1rem;letter-spacing:.04em;word-break:break-all}
+.mail span{display:inline-block;transition:transform .25s,color .25s}
+.mail span.esc{color:var(--laranja);transform:translateY(-3px)}
+footer{max-width:1180px;margin:0 auto;padding:8px 16px 28px;color:var(--mut);font-size:.82rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{nav.toc,.copiar{display:none}.wrap{display:block}body{background:#fff}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+<a href="../index.html">&larr; Todas as aulas — UC4 — Administrar e implantar servidores de banco de dados</a>
+<h1>Funções no MySQL (UDF): o guia completo da TechStore</h1>
+<div class="meta">Biblioteca · material complementar da Aula 02 (6/10/2026)</div>
+</div></header>
+
+<div class="wrap">
+<nav class="toc" aria-label="Sumário">
+<h2>Nesta página</h2>
+<ol>
+<li><a href="#s1">O que é uma função</a></li>
+<li><a href="#s2">Anatomia do CREATE FUNCTION</a></li>
+<li><a href="#s3">Por que a regra mora no banco</a></li>
+<li><a href="#s4">Uma chamada por linha</a></li>
+<li><a href="#s5">Simulador de frete</a></li>
+<li><a href="#s6">A ordem das condições</a></li>
+<li><a href="#s7">Galeria de exemplos</a></li>
+<li><a href="#s8">DETERMINISTIC e companhia</a></li>
+<li><a href="#s9">Gerenciar as suas funções</a></li>
+<li><a href="#s10">Quando não usar</a></li>
+<li><a href="#s11">Erros comuns</a></li>
+<li><a href="#s12">Quiz</a></li>
+<li><a href="#s13">Para praticar</a></li>
+</ol>
+</nav>
+
+<main>
+<section class="bloco">
+<p>Na Aula 02 você criou as primeiras funções da TechStore. Esta página vai mais fundo: mostra como uma função funciona por dentro, traz mais exemplos com os dados da loja e deixa você testar tudo antes de escrever no seu banco.</p>
+<p>Todos os exemplos estão no arquivo <a href="../Data/Aula02_exemplos_udf.sql">Aula02_exemplos_udf.sql, na pasta Data do repositório</a>. Eles foram testados com a base <code>loja_teste</code> da TechStore.</p>
+</section>
+
+<!-- 1 -->
+<section class="bloco" id="s1">
+<h2>1. O que é uma função</h2>
+<p>Uma <strong>função definida pelo usuário</strong> (UDF, do inglês <em>User-Defined Function</em>) é uma regra que você escreve e guarda <strong>dentro do banco</strong>. Ela funciona como uma máquina: recebe valores (os <strong>parâmetros</strong>), faz uma conta e devolve <strong>um único valor</strong>.</p>
+<p>Você já usa funções prontas do MySQL, como <code>ROUND</code>, <code>UPPER</code> e <code>COUNT</code>. Com a UDF, você cria as suas, com as regras do seu negócio.</p>
+
+<div class="painel" id="maquina">
+<div class="ctrl">
+<label>Preço (R$)<input type="number" id="mq-preco" value="250" min="0" step="0.01"></label>
+<label>Desconto (%)<input type="number" id="mq-pct" value="15" min="0" max="100" step="1"></label>
+<button class="bt" id="mq-go">Chamar a função</button>
+</div>
+<div class="svgbox">
+<svg id="mq-svg" viewBox="0 0 760 230" role="img" aria-labelledby="mq-tit mq-desc">
+<title id="mq-tit">Animação da função fn_preco_com_desconto</title>
+<desc id="mq-desc">Ilustração de uma máquina. Dois valores de entrada, o preço e o desconto, entram pela esquerda, a máquina calcula e o resultado sai pela direita.</desc>
+<defs><marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--mut)"/></marker></defs>
+<line x1="150" y1="80" x2="270" y2="105" stroke="var(--mut)" stroke-width="2" marker-end="url(#seta)"/>
+<line x1="150" y1="160" x2="270" y2="135" stroke="var(--mut)" stroke-width="2" marker-end="url(#seta)"/>
+<line x1="490" y1="120" x2="590" y2="120" stroke="var(--mut)" stroke-width="2" marker-end="url(#seta)"/>
+<g id="mq-in1"><rect x="20" y="58" width="130" height="44" rx="8" fill="var(--s1)"/><text id="mq-t1" x="85" y="86" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">p_preco = 250</text></g>
+<g id="mq-in2"><rect x="20" y="138" width="130" height="44" rx="8" fill="var(--s2)"/><text id="mq-t2" x="85" y="166" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">p_pct = 15</text></g>
+<rect x="262" y="55" width="236" height="130" rx="14" fill="var(--card)" stroke="var(--azul)" stroke-width="3"/>
+<text x="380" y="82" text-anchor="middle" fill="var(--azul)" font-size="14" font-weight="700" font-family="Montserrat,sans-serif">fn_preco_com_desconto</text>
+<g id="mq-eng" transform="translate(380 128)"><circle r="22" fill="none" stroke="var(--laranja)" stroke-width="7" stroke-dasharray="9 6"/><circle r="8" fill="var(--laranja)"/></g>
+<text id="mq-calc" x="380" y="174" text-anchor="middle" fill="var(--mut)" font-size="11">ROUND(p_preco × (1 − p_pct/100), 2)</text>
+<g id="mq-out" opacity="0.25"><rect x="595" y="98" width="150" height="44" rx="8" fill="var(--laranja)"/><text id="mq-t3" x="670" y="126" text-anchor="middle" fill="#1d2733" font-size="16" font-weight="700">RETURN 212.50</text></g>
+<text x="85" y="40" text-anchor="middle" fill="var(--mut)" font-size="12">parâmetros (entrada)</text>
+<text x="670" y="85" text-anchor="middle" fill="var(--mut)" font-size="12">um único valor (saída)</text>
+</svg>
+</div>
+<p aria-live="polite" id="mq-sql" class="mont" style="margin:4px 0 0">SELECT fn_preco_com_desconto(250, 15); <span style="color:var(--mut)">→</span> <strong>212.50</strong></p>
+</div>
+
+<div class="tab"><table>
+<tr><th>Característica</th><th>O que quer dizer</th></tr>
+<tr><td>Recebe parâmetros</td><td>Zero ou mais valores de entrada, cada um com um tipo (<code>INT</code>, <code>DECIMAL(10,2)</code>, <code>VARCHAR(100)</code>…).</td></tr>
+<tr><td>Devolve um valor</td><td>Sempre um só, do tipo declarado em <code>RETURNS</code>.</td></tr>
+<tr><td>Usada dentro de comandos</td><td>Aparece em <code>SELECT</code>, <code>WHERE</code>, <code>ORDER BY</code>, <code>UPDATE ... SET</code>, como qualquer função do MySQL.</td></tr>
+<tr><td>Fica guardada no banco</td><td>Pertence a um banco (ex.: <code>loja_teste</code>). Vai junto no backup e sobrevive ao contêiner, porque mora no volume.</td></tr>
+</table></div>
+</section>
+
+<!-- 2 -->
+<section class="bloco" id="s2">
+<h2>2. Anatomia do CREATE FUNCTION</h2>
+<p>Clique (ou use Tab e Enter) em cada parte do código para ver o que ela faz.</p>
+<div class="anat">
+<pre id="anat-code"><code><span class="parte" tabindex="0" role="button" data-p="drop"><span class="kw">DROP FUNCTION IF EXISTS</span> fn_situacao_estoque;</span>
+
+<span class="parte" tabindex="0" role="button" data-p="create"><span class="kw">CREATE FUNCTION</span> <span class="fn">fn_situacao_estoque</span></span><span class="parte" tabindex="0" role="button" data-p="param">(p_qtd <span class="kw">INT</span>)</span>
+<span class="parte" tabindex="0" role="button" data-p="returns"><span class="kw">RETURNS VARCHAR</span>(<span class="num">10</span>)</span>
+<span class="parte" tabindex="0" role="button" data-p="det"><span class="kw">DETERMINISTIC</span></span>
+<span class="parte" tabindex="0" role="button" data-p="return"><span class="kw">RETURN CASE</span>
+         <span class="kw">WHEN</span> p_qtd &lt; <span class="num">10</span>  <span class="kw">THEN</span> <span class="str">'Repor'</span>
+         <span class="kw">WHEN</span> p_qtd &lt; <span class="num">20</span>  <span class="kw">THEN</span> <span class="str">'Atenção'</span>
+         <span class="kw">WHEN</span> p_qtd &gt;= <span class="num">60</span> <span class="kw">THEN</span> <span class="str">'Excesso'</span>
+         <span class="kw">ELSE</span> <span class="str">'OK'</span>
+       <span class="kw">END</span>;</span>
+
+<span class="parte" tabindex="0" role="button" data-p="uso"><span class="kw">SELECT</span> nome, estoque, <span class="fn">fn_situacao_estoque</span>(estoque)
+  <span class="kw">FROM</span> produtos;</span></code></pre>
+<div class="expl" id="anat-expl" aria-live="polite"><h4>Escolha uma parte do código</h4><p>Cada trecho destacado ao passar o mouse tem uma explicação.</p></div>
+</div>
+
+<h3>Uma linha ou um bloco BEGIN ... END?</h3>
+<div class="tab"><table>
+<tr><th>Forma</th><th>Quando usar</th><th>Precisa de DELIMITER?</th></tr>
+<tr><td><code>RETURN expressão;</code></td><td>A conta cabe numa expressão só (com <code>CASE</code>, <code>IF()</code>, <code>ROUND</code>…).</td><td>Não</td></tr>
+<tr><td><code>BEGIN ... END</code></td><td>Precisa de variáveis (<code>DECLARE</code>), de vários passos, de <code>IF ... ELSEIF</code> ou de ler tabelas com <code>SELECT ... INTO</code>.</td><td>Sim, no terminal. No phpMyAdmin, use o campo <strong>Delimitador</strong>.</td></tr>
+</table></div>
+<pre><code><span class="kw">DELIMITER</span> $$                 <span class="cm">-- a partir daqui, o comando só termina em $$</span>
+<span class="kw">CREATE FUNCTION</span> <span class="fn">fn_exemplo</span>(p <span class="kw">INT</span>) <span class="kw">RETURNS INT DETERMINISTIC</span>
+<span class="kw">BEGIN</span>
+    <span class="kw">DECLARE</span> v <span class="kw">INT DEFAULT</span> <span class="num">0</span>;     <span class="cm">-- este ; não encerra o CREATE</span>
+    <span class="kw">SET</span> v = p * <span class="num">2</span>;
+    <span class="kw">RETURN</span> v;
+<span class="kw">END</span> $$                       <span class="cm">-- agora sim, fim do comando</span>
+<span class="kw">DELIMITER</span> ;                  <span class="cm">-- volta ao normal</span></code></pre>
+</section>
+
+<!-- 3 -->
+<section class="bloco" id="s3">
+<h2>3. Por que a regra mora no banco</h2>
+<p>Na TechStore, o frete era calculado em três lugares. Um dia a loja mudou o valor do Sudeste, e só dois sistemas foram atualizados. Veja o que acontece com o mesmo pedido.</p>
+<div class="ctrl" role="group" aria-label="Escolha o cenário">
+<button class="bt" id="rg-antes" aria-pressed="true">Antes: regra copiada em cada sistema</button>
+<button class="bt sec" id="rg-depois" aria-pressed="false">Depois: regra no banco</button>
+</div>
+<div class="svgbox">
+<svg id="rg-svg" viewBox="0 0 760 300" role="img" aria-labelledby="rg-tit rg-desc">
+<title id="rg-tit">Onde a regra de frete mora</title>
+<desc id="rg-desc">Diagrama com três sistemas da loja, site, aplicativo e planilha do financeiro, calculando o frete de um pedido de R$ 120 para Minas Gerais.</desc>
+<style>
+#rg-svg .fluxo{stroke-dasharray:8 6;animation:corre 1.2s linear infinite}
+@keyframes corre{to{stroke-dashoffset:-28}}
+#rg-svg .esconde{opacity:0;transition:opacity .4s}#rg-svg .mostra{opacity:1;transition:opacity .4s}
+</style>
+<text x="380" y="24" text-anchor="middle" fill="var(--mut)" font-size="13">Pedido de R$ 120,00 para MG</text>
+<g id="rg-sis"></g>
+<g id="rg-banco" class="esconde">
+<rect x="270" y="205" width="220" height="70" rx="12" fill="var(--card)" stroke="var(--azul)" stroke-width="3"/>
+<text x="380" y="235" text-anchor="middle" fill="var(--azul)" font-size="15" font-weight="700" font-family="Montserrat,sans-serif">MySQL · fn_frete()</text>
+<text x="380" y="258" text-anchor="middle" fill="var(--mut)" font-size="12">uma regra só, um lugar só</text>
+</g>
+</svg>
+</div>
+<p id="rg-msg" aria-live="polite" class="dica"></p>
+</section>
+
+<!-- 4 -->
+<section class="bloco" id="s4">
+<h2>4. Uma chamada por linha</h2>
+<p>Quando a função aparece no <code>SELECT</code>, o MySQL a executa <strong>uma vez para cada linha</strong> do resultado. Aperte o botão e acompanhe.</p>
+<pre><code><span class="kw">SELECT</span> nome, preco, <span class="fn">fn_preco_com_desconto</span>(preco, <span class="num">10</span>) <span class="kw">AS</span> promo
+  <span class="kw">FROM</span> produtos <span class="kw">WHERE</span> categoria = <span class="str">'Livros'</span>;</code></pre>
+<div class="ctrl">
+<button class="bt" id="ln-go">Executar linha a linha</button>
+<span>Execuções da função: <span class="contador" id="ln-cont" aria-live="polite">0</span></span>
+</div>
+<div class="tab"><table class="linhas-tab" id="ln-tab"><thead><tr><th>nome</th><th class="n">preco</th><th class="n">promo</th></tr></thead><tbody></tbody></table></div>
+<div class="dica"><p>Com 5 linhas, tudo bem. Com 5 milhões, uma função lenta multiplica o tempo da consulta. Você vai medir isso na Aula 15 (performance).</p></div>
+</section>
+
+<!-- 5 -->
+<section class="bloco" id="s5">
+<h2>5. Simulador de frete da TechStore</h2>
+<p>Estas são as regras do desafio da aula. Use o simulador para entender o comportamento esperado e para conferir os seus testes. O código SQL é com você.</p>
+<div class="tab"><table>
+<tr><th>Situação</th><th class="n">Frete</th></tr>
+<tr><td>Pedido a partir de R$ 300,00</td><td class="n">Grátis</td></tr>
+<tr><td>SP</td><td class="n">R$ 15,00</td></tr>
+<tr><td>RJ, MG, ES (Sudeste)</td><td class="n">R$ 25,00</td></tr>
+<tr><td>PR, SC, RS (Sul)</td><td class="n">R$ 30,00</td></tr>
+<tr><td>Demais estados</td><td class="n">R$ 45,00</td></tr>
+</table></div>
+
+<div class="painel">
+<div class="ufs" id="ufs" role="group" aria-label="Escolha o estado"></div>
+<div class="ctrl" style="margin-top:12px">
+<label for="fr-valor">Valor do pedido: <span id="fr-vtx">R$ 120,00</span><input type="range" id="fr-valor" min="0" max="600" step="10" value="120"></label>
+<div><div style="font-size:.85rem;color:var(--mut)">fn_frete(<span id="fr-call">'MG', 120.00</span>)</div><div class="saida" id="fr-out" aria-live="polite">R$ 25,00</div></div>
+</div>
+<h3 style="margin-top:6px">Frete conforme o valor do pedido</h3>
+<div class="legenda" id="fr-leg"></div>
+<div class="svgbox"><svg id="fr-chart" viewBox="0 0 760 300" role="img" aria-label="Gráfico de degraus: frete em reais pelo valor do pedido, uma linha por grupo de estados. Abaixo de R$ 300 o frete é 15, 25, 30 ou 45 reais; a partir de R$ 300 todas as linhas caem para zero."></svg></div>
+</div>
+
+<h3>Os pedidos reais da TechStore</h3>
+<p>Cada barra é um pedido da base (os cancelados ficam de fora). Mude o limite do frete grátis e veja quantos pedidos passam a não pagar frete e quanto a loja deixa de cobrar.</p>
+<div class="painel">
+<div class="ctrl"><label for="pd-lim">Frete grátis a partir de: <span id="pd-ltx">R$ 300</span><input type="range" id="pd-lim" min="100" max="1100" step="50" value="300"></label></div>
+<div class="kpis">
+<div class="kpi"><b id="pd-k1">–</b><span>pedidos com frete grátis</span></div>
+<div class="kpi"><b id="pd-k2">–</b><span>frete cobrado dos clientes</span></div>
+<div class="kpi"><b id="pd-k3">–</b><span>frete médio por pedido</span></div>
+</div>
+<div class="legenda"><span><i style="background:var(--s1)"></i>Paga frete</span><span><i style="background:var(--s3)"></i>Frete grátis</span><span><i style="background:none;border-top:2px dashed var(--tx);height:0;border-radius:0"></i>Limite do frete grátis</span></div>
+<div class="svgbox"><svg id="pd-chart" viewBox="0 0 760 300" role="img" aria-label="Gráfico de barras com o valor total de cada pedido da TechStore e uma linha tracejada no limite do frete grátis."></svg></div>
+<details><summary>Ver os dados em tabela</summary><div class="tab"><table id="pd-tab"><thead><tr><th>Pedido</th><th>UF</th><th class="n">Total</th><th class="n">Frete</th></tr></thead><tbody></tbody></table></div></details>
+</div>
+<div class="dica"><p><strong>Pense como a equipe comercial:</strong> baixar o limite atrai clientes, mas a loja paga a entrega. Que limite você escolheria? Que outro dado você precisaria consultar no banco para decidir?</p></div>
+</section>
+
+<!-- 6 -->
+<section class="bloco" id="s6">
+<h2>6. A ordem das condições importa</h2>
+<p>Num <code>IF ... ELSEIF</code> ou num <code>CASE</code>, o MySQL testa as condições <strong>de cima para baixo</strong> e para na primeira verdadeira. Se a ordem estiver errada, a função cria a regra errada sem dar erro nenhum.</p>
+<p>Exemplo: desconto por valor da compra. R$ 1.000 ou mais ganham 15%; R$ 500 ou mais, 10%; R$ 200 ou mais, 5%.</p>
+<div class="ctrl" role="group" aria-label="Versão da função">
+<button class="bt" id="od-certa" aria-pressed="true">Versão correta</button>
+<button class="bt sec" id="od-errada" aria-pressed="false">Versão com a ordem trocada</button>
+</div>
+<pre><code id="od-code"></code></pre>
+<div class="tab"><table id="od-tab"><thead><tr><th class="n">Valor testado</th><th class="n">Esperado</th><th class="n">A função devolveu</th><th>Resultado</th></tr></thead><tbody></tbody></table></div>
+<p id="od-msg" aria-live="polite"></p>
+<div class="dica"><p><strong>Regra prática:</strong> com faixas do tipo "a partir de", comece pela condição mais restritiva (o maior valor). E sempre escreva testes para os limites: 199,99, 200, 500, 1000.</p></div>
+</section>
+
+<!-- 7 -->
+<section class="bloco" id="s7">
+<h2>7. Galeria de exemplos</h2>
+
+<h3>7.1 Situação do estoque (CASE)</h3>
+<p>A função classifica a quantidade em estoque. Com ela, um <code>GROUP BY</code> mostra a saúde do estoque da loja.</p>
+<pre><code><span class="kw">SELECT</span> <span class="fn">fn_situacao_estoque</span>(estoque) <span class="kw">AS</span> situacao, <span class="fn">COUNT</span>(*) <span class="kw">AS</span> produtos
+  <span class="kw">FROM</span> produtos
+ <span class="kw">GROUP BY</span> situacao;</code></pre>
+<div class="painel">
+<div class="ctrl"><label>Teste a função: estoque<input type="number" id="es-in" value="14" min="0" step="1"></label><div class="saida" id="es-out" aria-live="polite">'Atenção'</div></div>
+<div class="svgbox"><svg id="es-chart" viewBox="0 0 760 200" role="img" aria-label="Gráfico de barras horizontais: produtos da TechStore por situação do estoque. Repor 6, Atenção 17, OK 38, Excesso 7."></svg></div>
+</div>
+
+<h3>7.2 Valor da parcela (matemática financeira)</h3>
+<p>Parcelamento com juros pela tabela Price: <code>parcela = valor × i ÷ (1 − (1 + i)<sup>−n</sup>)</code>. A função trata dois casos especiais: número de parcelas inválido e juros zero.</p>
+<pre><code><span class="kw">DELIMITER</span> $$
+<span class="kw">CREATE FUNCTION</span> <span class="fn">fn_parcela</span>(p_valor <span class="kw">DECIMAL</span>(<span class="num">10</span>,<span class="num">2</span>), p_n <span class="kw">INT</span>, p_juros_mes <span class="kw">DECIMAL</span>(<span class="num">5</span>,<span class="num">2</span>))
+<span class="kw">RETURNS DECIMAL</span>(<span class="num">10</span>,<span class="num">2</span>)
+<span class="kw">DETERMINISTIC</span>
+<span class="kw">BEGIN</span>
+    <span class="kw">DECLARE</span> v_i <span class="kw">DOUBLE</span>;
+
+    <span class="kw">IF</span> p_n &lt;= <span class="num">0</span> <span class="kw">THEN</span>
+        <span class="kw">RETURN NULL</span>;                       <span class="cm">-- número de parcelas inválido</span>
+    <span class="kw">END IF</span>;
+
+    <span class="kw">SET</span> v_i = p_juros_mes / <span class="num">100</span>;
+
+    <span class="kw">IF</span> v_i = <span class="num">0</span> <span class="kw">THEN</span>
+        <span class="kw">RETURN</span> <span class="fn">ROUND</span>(p_valor / p_n, <span class="num">2</span>);    <span class="cm">-- sem juros</span>
+    <span class="kw">END IF</span>;
+
+    <span class="kw">RETURN</span> <span class="fn">ROUND</span>(p_valor * v_i / (<span class="num">1</span> - <span class="fn">POW</span>(<span class="num">1</span> + v_i, -p_n)), <span class="num">2</span>);
+<span class="kw">END</span> $$
+<span class="kw">DELIMITER</span> ;</code></pre>
+<div class="painel">
+<div class="ctrl">
+<label>Produto<select id="pa-prod"></select></label>
+<label for="pa-j">Juros ao mês: <span id="pa-jtx">2,5%</span><input type="range" id="pa-j" min="0" max="8" step="0.5" value="2.5"></label>
+<label for="pa-n">Parcelas: <span id="pa-ntx">10x</span><input type="range" id="pa-n" min="1" max="12" step="1" value="10"></label>
+</div>
+<div class="kpis">
+<div class="kpi"><b id="pa-k1">–</b><span>valor de cada parcela</span></div>
+<div class="kpi"><b id="pa-k2">–</b><span>total pago</span></div>
+<div class="kpi"><b id="pa-k3">–</b><span>juros pagos</span></div>
+</div>
+<p style="font-size:.85rem;color:var(--mut);margin:0">Total pago conforme o número de parcelas. A barra laranja é a escolha atual.</p>
+<div class="svgbox"><svg id="pa-chart" viewBox="0 0 760 260" role="img" aria-label="Gráfico de barras com o total pago de 1 a 12 parcelas para o produto e os juros escolhidos."></svg></div>
+</div>
+
+<h3>7.3 Mascarar e-mail (texto e LGPD)</h3>
+<p>Uma tela de atendimento não precisa mostrar o e-mail completo do cliente. A função esconde o meio do endereço. Você vai usar ideias assim na Aula 09, sobre LGPD.</p>
+<pre><code><span class="kw">DELIMITER</span> $$
+<span class="kw">CREATE FUNCTION</span> <span class="fn">fn_mascara_email</span>(p_email <span class="kw">VARCHAR</span>(<span class="num">100</span>))
+<span class="kw">RETURNS VARCHAR</span>(<span class="num">100</span>)
+<span class="kw">DETERMINISTIC</span>
+<span class="kw">BEGIN</span>
+    <span class="kw">DECLARE</span> v_arroba <span class="kw">INT DEFAULT</span> <span class="fn">LOCATE</span>(<span class="str">'@'</span>, p_email);
+
+    <span class="kw">IF</span> v_arroba &lt;= <span class="num">3</span> <span class="kw">THEN</span>
+        <span class="kw">RETURN</span> p_email;                    <span class="cm">-- usuário curto demais para mascarar</span>
+    <span class="kw">END IF</span>;
+
+    <span class="kw">RETURN</span> <span class="fn">CONCAT</span>(<span class="fn">LEFT</span>(p_email, <span class="num">2</span>),
+                  <span class="fn">REPEAT</span>(<span class="str">'*'</span>, v_arroba - <span class="num">3</span>),
+                  <span class="fn">SUBSTRING</span>(p_email, v_arroba));
+<span class="kw">END</span> $$
+<span class="kw">DELIMITER</span> ;</code></pre>
+<div class="painel">
+<div class="ctrl"><label>E-mail<input type="text" id="em-in" value="ana.silva@email.com" style="min-width:260px"></label><button class="bt" id="em-go">Mascarar</button></div>
+<div class="mail" id="em-out" aria-live="polite"></div>
+<div class="tab"><table><thead><tr><th>Passo</th><th>Função</th><th>Resultado</th></tr></thead><tbody id="em-passos"></tbody></table></div>
+</div>
+
+<h3>7.4 Função que lê o banco (READS SQL DATA)</h3>
+<p>Uma função também pode consultar tabelas. Esta conta quantos pedidos válidos cada cliente fez. Repare no <code>SELECT ... INTO</code>, que guarda o resultado da consulta numa variável.</p>
+<pre><code><span class="kw">DELIMITER</span> $$
+<span class="kw">CREATE FUNCTION</span> <span class="fn">fn_qtd_pedidos</span>(p_cliente_id <span class="kw">INT</span>)
+<span class="kw">RETURNS INT</span>
+<span class="kw">READS SQL DATA</span>
+<span class="kw">BEGIN</span>
+    <span class="kw">DECLARE</span> v_qtd <span class="kw">INT</span>;
+
+    <span class="kw">SELECT</span> <span class="fn">COUNT</span>(*) <span class="kw">INTO</span> v_qtd
+      <span class="kw">FROM</span> pedidos
+     <span class="kw">WHERE</span> cliente_id = p_cliente_id
+       <span class="kw">AND</span> status &lt;&gt; <span class="str">'Cancelado'</span>;
+
+    <span class="kw">RETURN</span> v_qtd;
+<span class="kw">END</span> $$
+<span class="kw">DELIMITER</span> ;
+
+<span class="kw">SELECT</span> nome, <span class="fn">fn_qtd_pedidos</span>(id) <span class="kw">AS</span> pedidos
+  <span class="kw">FROM</span> clientes <span class="kw">ORDER BY</span> pedidos <span class="kw">DESC</span>, nome <span class="kw">LIMIT</span> <span class="num">5</span>;</code></pre>
+<div class="tab"><table><thead><tr><th>nome</th><th class="n">pedidos</th></tr></thead><tbody>
+<tr><td>Ana Silva</td><td class="n">3</td></tr><tr><td>Bruno Santos</td><td class="n">2</td></tr><tr><td>Fernanda Costa</td><td class="n">2</td></tr><tr><td>Helena Martins</td><td class="n">2</td></tr><tr><td>Lucas Oliveira</td><td class="n">2</td></tr>
+</tbody></table></div>
+<div class="dica"><p>Essa mesma estrutura (<code>READS SQL DATA</code> + <code>SELECT ... INTO</code>) resolve a Parte D do roteiro da aula, a <code>fn_total_pedido</code>.</p></div>
+</section>
+
+<!-- 8 -->
+<section class="bloco" id="s8">
+<h2>8. DETERMINISTIC e companhia</h2>
+<p>O MySQL 8.4 grava um <strong>log binário</strong> com tudo o que muda no banco. Esse log é usado em backups e réplicas (você vai ver na Aula 12). Por isso, ele exige que cada função diga como se comporta. Sem isso, aparece o erro 1418.</p>
+<div class="tab"><table>
+<tr><th>Característica</th><th>Quer dizer</th><th>Exemplo</th></tr>
+<tr><td><code>DETERMINISTIC</code></td><td>Mesmas entradas, sempre o mesmo resultado.</td><td><code>fn_frete</code>, <code>fn_parcela</code></td></tr>
+<tr><td><code>NOT DETERMINISTIC</code></td><td>O resultado pode mudar mesmo com as mesmas entradas. É o padrão, se você não escrever nada.</td><td>Uma função que usa <code>NOW()</code> ou <code>RAND()</code></td></tr>
+<tr><td><code>READS SQL DATA</code></td><td>Lê tabelas, mas não altera nada.</td><td><code>fn_qtd_pedidos</code></td></tr>
+<tr><td><code>NO SQL</code></td><td>Não tem nenhum comando SQL dentro, só cálculo.</td><td>Uma conversão de unidades</td></tr>
+</table></div>
+<div class="dica"><p><strong>Não minta para o banco.</strong> Declarar <code>DETERMINISTIC</code> numa função que usa <code>NOW()</code> faz o erro sumir, mas pode gerar resultados diferentes num restore ou numa réplica.</p></div>
+
+<h3>Classifique as funções</h3>
+<div class="quiz" id="cl"></div>
+</section>
+
+<!-- 9 -->
+<section class="bloco" id="s9">
+<h2>9. Gerenciar as suas funções</h2>
+<div class="tab"><table>
+<tr><th>Quero…</th><th>Comando</th></tr>
+<tr><td>Listar as funções do banco</td><td><code>SHOW FUNCTION STATUS WHERE Db = 'loja_teste';</code></td></tr>
+<tr><td>Ver o código de uma função</td><td><code>SHOW CREATE FUNCTION fn_frete;</code></td></tr>
+<tr><td>Ver detalhes (tipo, característica)</td><td><code>SELECT ROUTINE_NAME, DATA_TYPE, IS_DETERMINISTIC, SQL_DATA_ACCESS FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA = 'loja_teste';</code></td></tr>
+<tr><td>Alterar o código</td><td>Não existe "editar". Use <code>DROP FUNCTION IF EXISTS</code> e crie de novo.</td></tr>
+<tr><td>Apagar</td><td><code>DROP FUNCTION IF EXISTS fn_frete;</code></td></tr>
+</table></div>
+<div class="dica"><p>Para criar funções, o usuário precisa do privilégio <code>CREATE ROUTINE</code>. Para usar, <code>EXECUTE</code>. Na Aula 07, você vai decidir quem da TechStore pode fazer o quê.</p></div>
+</section>
+
+<!-- 10 -->
+<section class="bloco" id="s10">
+<h2>10. Quando não usar uma função</h2>
+<div class="tab"><table>
+<tr><th>Situação</th><th>Por que evitar</th><th>Alternativa</th></tr>
+<tr><td>Função sobre a coluna no <code>WHERE</code>, como <code>WHERE fn_situacao_estoque(estoque) = 'Repor'</code></td><td>O MySQL precisa calcular a função em todas as linhas e não consegue usar o índice da coluna.</td><td>Filtrar pela coluna: <code>WHERE estoque &lt; 10</code>.</td></tr>
+<tr><td>Função que faz <code>SELECT</code> chamada em milhares de linhas</td><td>Cada linha dispara uma nova consulta.</td><td>Um <code>JOIN</code> com <code>GROUP BY</code>, que o banco resolve de uma vez.</td></tr>
+<tr><td>Precisa gravar dados (<code>INSERT</code>, <code>UPDATE</code>)</td><td>Função calcula e devolve um valor. Gravar é papel de outra rotina.</td><td><strong>Stored procedure</strong> (Aula 03).</td></tr>
+<tr><td>Regra de tela (cor de botão, texto de aviso)</td><td>Não é regra de negócio dos dados.</td><td>Deixar na aplicação.</td></tr>
+</table></div>
+</section>
+
+<!-- 11 -->
+<section class="bloco" id="s11">
+<h2>11. Erros comuns</h2>
+<details><summary>ERROR 1418: This function has none of DETERMINISTIC, NO SQL, or READS SQL DATA…</summary><div><p>Faltou declarar a característica. Acrescente <code>DETERMINISTIC</code> (só calcula) ou <code>READS SQL DATA</code> (lê tabelas) logo depois do <code>RETURNS</code>.</p></div></details>
+<details><summary>ERROR 1304: FUNCTION fn_frete already exists</summary><div><p>A função já existe. Rode <code>DROP FUNCTION IF EXISTS fn_frete;</code> antes do <code>CREATE</code>.</p></div></details>
+<details><summary>ERROR 1064: You have an error in your SQL syntax… near 'END'</summary><div><p>Quase sempre é o delimitador. Confira se o <code>DELIMITER $$</code> veio antes e se há <code>$$</code> depois do <code>END</code>. Também vale procurar um <code>;</code> esquecido no fim de alguma linha de dentro.</p></div></details>
+<details><summary>ERROR 1305: FUNCTION loja_teste.fn_frte does not exist</summary><div><p>Nome digitado errado, ou você está em outro banco. Rode <code>USE loja_teste;</code> e confira com <code>SHOW FUNCTION STATUS</code>.</p></div></details>
+<details><summary>ERROR 1318: Incorrect number of arguments for FUNCTION…</summary><div><p>A função foi chamada com parâmetros a mais ou a menos. <code>fn_frete</code> espera dois: a UF e o valor.</p></div></details>
+<details><summary>A função devolve NULL</summary><div><p>A variável de retorno não recebeu valor em nenhum caminho. Falta um <code>ELSE</code>, ou a variável foi declarada sem <code>DEFAULT</code>. Também acontece quando um dos parâmetros chega como <code>NULL</code>.</p></div></details>
+<details><summary>ERROR 1172: Result consisted of more than one row</summary><div><p>O <code>SELECT ... INTO</code> encontrou mais de uma linha. Uma variável guarda um valor só. Use uma função de agregação (<code>COUNT</code>, <code>SUM</code>) ou um filtro que traga uma linha só.</p></div></details>
+</section>
+
+<!-- 12 -->
+<section class="bloco" id="s12">
+<h2>12. Quiz</h2>
+<p>Cinco perguntas rápidas para conferir o que você aprendeu. Você pode tentar de novo quantas vezes quiser.</p>
+<div class="quiz" id="qz"></div>
+<p class="placar" id="qz-placar" aria-live="polite"></p>
+<button class="bt sec" id="qz-reset">Recomeçar o quiz</button>
+</section>
+
+<!-- 13 -->
+<section class="bloco" id="s13">
+<h2>13. Para praticar</h2>
+<p>Desafios extras com a base da TechStore. Escreva, crie no seu banco e invente os seus testes antes de rodar.</p>
+<ol>
+<li><strong><code>fn_prazo_entrega(p_uf)</code></strong>: devolve o prazo em dias úteis. SP: 2; Sudeste: 4; Sul: 5; demais: 8. Depois, liste os pedidos com a data prevista de entrega usando <code>DATE_ADD</code>.</li>
+<li><strong><code>fn_nome_curto(p_nome)</code></strong>: devolve o primeiro nome e a inicial do sobrenome. "Ana Silva" vira "Ana S.". Dica: <code>SUBSTRING_INDEX</code>.</li>
+<li><strong><code>fn_preco_final(p_preco, p_uf)</code></strong>: combina duas funções, aplica a <code>fn_faixa_desconto</code> no preço e soma a <code>fn_frete</code>.</li>
+<li><strong><code>fn_ticket_medio(p_cliente_id)</code></strong>: lê o banco e devolve o valor médio dos pedidos não cancelados do cliente. Que característica ela precisa ter?</li>
+</ol>
+<div class="dica"><p><strong>Reflexão:</strong> qual dessas funções você colocaria no banco e qual deixaria na aplicação? Por quê?</p></div>
+</section>
+</main>
+</div>
+<footer>Senac São Paulo · Curso Técnico em Desenvolvimento de Sistemas · UC4 · Biblioteca da turma TDS01</footer>
+<div class="tt" id="tt" role="tooltip"></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+var NS="http://www.w3.org/2000/svg";
+var reduz=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function el(tag,at,pai){var e=document.createElementNS(NS,tag);for(var k in at)e.setAttribute(k,at[k]);if(pai)pai.appendChild(e);return e}
+function txt(tag,at,t,pai){var e=el(tag,at,pai);e.textContent=t;return e}
+function brl(v){return "R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function dec(v){return v.toFixed(2)}
+var tt=$("#tt");
+function mostraTT(ev,html){tt.innerHTML=html;tt.style.display="block";var x=ev.clientX+14,y=ev.clientY+14;var r=tt.getBoundingClientRect();if(x+r.width>innerWidth-8)x=ev.clientX-r.width-14;if(y+r.height>innerHeight-8)y=ev.clientY-r.height-14;tt.style.left=x+"px";tt.style.top=y+"px"}
+function escondeTT(){tt.style.display="none"}
+
+/* copiar */
+document.querySelectorAll("pre").forEach(function(p){if(p.id==="anat-code")return;var b=document.createElement("button");b.className="copiar";b.type="button";b.textContent="Copiar";b.addEventListener("click",function(){var t=p.querySelector("code").innerText;(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent="Copiado!";setTimeout(function(){b.textContent="Copiar"},1500)}).catch(function(){b.textContent="Selecione e copie"})});p.appendChild(b)});
+
+/* ---------- dados da TechStore ---------- */
+var PEDIDOS="1,SP,Entregue,330;2,RJ,Entregue,125.5;3,MG,Processando,750;4,SP,Entregue,86.5;5,PR,Cancelado,120;6,RS,Entregue,510;7,SP,Entregue,84;8,SP,Processando,279.6;9,SP,Entregue,520;10,RJ,Cancelado,114.8;11,MG,Entregue,75;12,MG,Processando,199;13,PR,Entregue,81.5;14,PR,Entregue,119.9;15,RS,Cancelado,650;16,RS,Entregue,137;17,BA,Processando,1010;18,BA,Entregue,79.7;19,CE,Entregue,159;20,PE,Processando,310;21,DF,Entregue,110;22,SP,Entregue,90;23,RJ,Entregue,79.8;24,MG,Cancelado,149;25,SP,Entregue,110;26,SP,Entregue,88;27,MG,Processando,380".split(";").map(function(l){var a=l.split(",");return{id:+a[0],uf:a[1],st:a[2],tot:+a[3]}}).filter(function(p){return p.st!=="Cancelado"});
+var ESTOQUE=[15,30,8,50,40,25,60,20,12,5,25,18,40,35,14,50,12,6,30,80,100,45,60,25,40,35,15,40,70,20,18,50,30,22,8,10,15,28,45,7,35,12,30,15,20,55,40,25,45,60,35,22,55,40,30,25,18,14,28,10,6,20,15,12,18,22,50,80];
+var PRODS=[["Placa de Vídeo RTX 4060",2199],["Cadeira Gamer",890],["Monitor 24 Pol",750],["SSD NVMe 1TB",450],["Teclado Mecânico",250]];
+var LIVROS=[["Livro: SQL para Iniciantes",65],["Livro: Engenharia de Dados na Prática",110],["Livro: Modelagem de Bancos de Dados",85],["Livro: Algoritmos e Estruturas",95],["Livro: Clean Code em Português",88]];
+
+var GRUPOS=[{k:"SP",nome:"SP",ufs:["SP"],v:15,cor:"var(--s1)"},{k:"SE",nome:"Sudeste",ufs:["RJ","MG","ES"],v:25,cor:"var(--s2)"},{k:"S",nome:"Sul",ufs:["PR","SC","RS"],v:30,cor:"var(--s3)"},{k:"O",nome:"Demais",ufs:["AC","AL","AP","AM","BA","CE","DF","GO","MA","MT","MS","PA","PB","PE","PI","RN","RO","RR","SE","TO"],v:45,cor:"var(--s4)"}];
+function frete(uf,valor,lim){lim=lim||300;if(valor>=lim)return 0;for(var i=0;i<3;i++)if(GRUPOS[i].ufs.indexOf(uf)>=0)return GRUPOS[i].v;return 45}
+
+/* ---------- 1. máquina ---------- */
+(function(){
+  var go=$("#mq-go"),ip=$("#mq-preco"),ic=$("#mq-pct"),i1=$("#mq-in1"),i2=$("#mq-in2"),out=$("#mq-out"),eng=$("#mq-eng");
+  [i1,i2,out].forEach(function(g){g.style.transition="transform .7s ease, opacity .5s"});
+  function calc(){var p=parseFloat(ip.value)||0,c=parseFloat(ic.value)||0;return Math.round(p*(1-c/100)*100)/100}
+  function rotulos(){$("#mq-t1").textContent="p_preco = "+(parseFloat(ip.value)||0);$("#mq-t2").textContent="p_pct = "+(parseFloat(ic.value)||0)}
+  ip.addEventListener("input",rotulos);ic.addEventListener("input",rotulos);
+  var ang=0,tm=null;
+  go.addEventListener("click",function(){
+    rotulos();var r=calc();go.disabled=true;
+    out.style.opacity=.25;
+    if(!reduz){i1.style.transform="translate(200px,40px) scale(.5)";i2.style.transform="translate(200px,-40px) scale(.5)";i1.style.opacity=0;i2.style.opacity=0;}
+    var t0=performance.now();
+    function gira(t){ang=(t-t0)*.5;eng.setAttribute("transform","translate(380 128) rotate("+ang+")");if(t-t0<900&&!reduz)tm=requestAnimationFrame(gira);else fim()}
+    function fim(){
+      $("#mq-t3").textContent="RETURN "+dec(r);out.style.opacity=1;
+      if(!reduz){out.style.transform="translate(-20px,0)";setTimeout(function(){out.style.transform="none"},20)}
+      $("#mq-sql").innerHTML="SELECT fn_preco_com_desconto("+(parseFloat(ip.value)||0)+", "+(parseFloat(ic.value)||0)+"); <span style=\"color:var(--mut)\">→</span> <strong>"+dec(r)+"</strong>";
+      setTimeout(function(){i1.style.transform="none";i2.style.transform="none";i1.style.opacity=1;i2.style.opacity=1;go.disabled=false},500);
+    }
+    if(reduz)fim();else tm=requestAnimationFrame(gira);
+  });
+  out.style.opacity=1;
+})();
+
+/* ---------- 2. anatomia ---------- */
+(function(){
+  var E={
+    drop:["DROP FUNCTION IF EXISTS","Apaga a função, se ela já existir. Assim você pode rodar o script de novo sem o erro 1304. Não existe \"editar função\": para mudar, apague e crie de novo."],
+    create:["CREATE FUNCTION nome","Cria a função no banco em uso (USE loja_teste). Use um prefixo como fn_ e um nome que diga o que ela faz."],
+    param:["Parâmetros","O que a função recebe, entre parênteses, cada um com o seu tipo. O prefixo p_ evita confundir o parâmetro com o nome de uma coluna. Pode haver zero, um ou vários parâmetros, separados por vírgula."],
+    returns:["RETURNS tipo","O tipo do valor que a função devolve. Se o resultado não couber no tipo (ex.: um texto maior que 10 caracteres), o MySQL corta o valor ou dá erro."],
+    det:["DETERMINISTIC","Avisa o banco que, para as mesmas entradas, o resultado é sempre o mesmo. Com o log binário ligado (padrão do MySQL 8.4), declarar a característica é obrigatório. Veja a seção 8."],
+    return:["RETURN expressão","O corpo da função. Aqui é uma linha só, com CASE: as condições são testadas de cima para baixo e a primeira verdadeira decide o resultado."],
+    uso:["Usando a função","Depois de criada, a função se comporta como qualquer função do MySQL: entra no SELECT, no WHERE, no ORDER BY e no UPDATE. Ela é executada uma vez para cada linha."]
+  };
+  var ps=document.querySelectorAll(".parte"),ex=$("#anat-expl");
+  function sel(p){ps.forEach(function(x){x.classList.toggle("sel",x===p)});var e=E[p.dataset.p];ex.innerHTML="<h4>"+e[0]+"</h4><p>"+e[1]+"</p>"}
+  ps.forEach(function(p){p.addEventListener("click",function(){sel(p)});p.addEventListener("keydown",function(ev){if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();sel(p)}})});
+})();
+
+/* ---------- 3. onde a regra mora ---------- */
+(function(){
+  var g=$("#rg-sis"),banco=$("#rg-banco"),msg=$("#rg-msg");
+  var S=[{n:"Site",x:40},{n:"Aplicativo",x:290},{n:"Planilha do financeiro",x:540}];
+  var antes=[25,20,25];
+  function desenha(modo){
+    g.innerHTML="";
+    S.forEach(function(s,i){
+      var val=modo==="antes"?antes[i]:25,erro=modo==="antes"&&val!==25;
+      el("rect",{x:s.x,y:45,width:180,height:110,rx:12,fill:"var(--card)",stroke:erro?"var(--erro)":"var(--ln)","stroke-width":erro?3:2},g);
+      txt("text",{x:s.x+90,y:72,"text-anchor":"middle",fill:"var(--tx)","font-size":14,"font-weight":700,"font-family":"Montserrat,sans-serif"},s.n,g);
+      txt("text",{x:s.x+90,y:94,"text-anchor":"middle",fill:"var(--mut)","font-size":11},modo==="antes"?"regra copiada no código":"chama fn_frete('MG', 120)",g);
+      txt("text",{x:s.x+90,y:128,"text-anchor":"middle",fill:erro?"var(--erro)":"var(--tx)","font-size":22,"font-weight":700},"R$ "+val+",00",g);
+      if(erro)txt("text",{x:s.x+90,y:148,"text-anchor":"middle",fill:"var(--erro)","font-size":11,"font-weight":700},"✗ valor antigo",g);
+      if(modo==="depois"){el("path",{d:"M"+(s.x+90)+" 157 C "+(s.x+90)+" 185, 380 180, 380 203",fill:"none",stroke:"var(--azul)","stroke-width":2.5,"class":reduz?"":"fluxo"},g)}
+    });
+    banco.setAttribute("class",modo==="depois"?"mostra":"esconde");
+    msg.innerHTML=modo==="antes"?"<strong>Três respostas para o mesmo pedido.</strong> O aplicativo ficou com o frete antigo. O cliente vê um valor no app e paga outro no site, e o financeiro não fecha as contas.":"<strong>Uma resposta só.</strong> Os três sistemas chamam a mesma função. Quando a regra mudar, a equipe de banco altera a fn_frete uma vez e todos passam a usar o valor novo.";
+    $("#rg-antes").setAttribute("aria-pressed",modo==="antes");$("#rg-depois").setAttribute("aria-pressed",modo==="depois");
+    $("#rg-antes").classList.toggle("sec",modo!=="antes");$("#rg-depois").classList.toggle("sec",modo!=="depois");
+  }
+  $("#rg-antes").addEventListener("click",function(){desenha("antes")});
+  $("#rg-depois").addEventListener("click",function(){desenha("depois")});
+  desenha("antes");
+})();
+
+/* ---------- 4. linha a linha ---------- */
+(function(){
+  var tb=$("#ln-tab tbody"),cont=$("#ln-cont"),go=$("#ln-go");
+  function monta(){tb.innerHTML="";LIVROS.forEach(function(l){var tr=document.createElement("tr");tr.innerHTML="<td>"+l[0]+"</td><td class='n'>"+dec(l[1])+"</td><td class='n'>&nbsp;</td>";tb.appendChild(tr)});cont.textContent="0"}
+  monta();
+  go.addEventListener("click",function(){
+    monta();go.disabled=true;var rows=tb.querySelectorAll("tr"),i=0;
+    function passo(){
+      rows.forEach(function(r){r.classList.remove("ativa")});
+      if(i>=rows.length){go.disabled=false;go.textContent="Executar de novo";return}
+      rows[i].classList.add("ativa");rows[i].children[2].textContent=dec(Math.round(LIVROS[i][1]*0.9*100)/100);
+      cont.textContent=String(i+1);i++;setTimeout(passo,reduz?0:700);
+    }
+    passo();
+  });
+})();
+
+/* ---------- 5. simulador de frete ---------- */
+(function(){
+  var ufSel="MG",box=$("#ufs");
+  GRUPOS.forEach(function(gr){
+    var d=document.createElement("div");d.className="reg";
+    d.innerHTML="<span>"+(gr.k==="SP"?"São Paulo":gr.k==="O"?"Demais estados":gr.nome)+"</span>";
+    gr.ufs.forEach(function(u){var b=document.createElement("button");b.type="button";b.className="uf";b.textContent=u;b.setAttribute("aria-pressed",u===ufSel);b.addEventListener("click",function(){ufSel=u;box.querySelectorAll(".uf").forEach(function(x){x.setAttribute("aria-pressed",x.textContent===u)});atualiza()});d.appendChild(b)});
+    box.appendChild(d);
+  });
+  var rg=$("#fr-valor");rg.addEventListener("input",atualiza);
+  // legenda
+  $("#fr-leg").innerHTML=GRUPOS.map(function(g){return "<span><i style='background:"+g.cor+"'></i>"+g.nome+" (R$ "+g.v+")</span>"}).join("");
+  // gráfico
+  var svg=$("#fr-chart"),W=760,H=300,m={l:56,r:90,t:16,b:44},pw=W-m.l-m.r,ph=H-m.t-m.b;
+  function X(v){return m.l+v/600*pw}function Y(v){return m.t+ph-v/50*ph}
+  [0,10,20,30,40,50].forEach(function(v){el("line",{x1:m.l,x2:m.l+pw,y1:Y(v),y2:Y(v),stroke:"var(--grid)","stroke-width":1},svg);txt("text",{x:m.l-8,y:Y(v)+4,"text-anchor":"end",fill:"var(--mut)","font-size":11},"R$ "+v,svg)});
+  [0,100,200,300,400,500,600].forEach(function(v){txt("text",{x:X(v),y:m.t+ph+18,"text-anchor":"middle",fill:"var(--mut)","font-size":11},"R$ "+v,svg)});
+  txt("text",{x:m.l+pw/2,y:H-6,"text-anchor":"middle",fill:"var(--mut)","font-size":12},"Valor do pedido",svg);
+  txt("text",{x:14,y:m.t+ph/2,"text-anchor":"middle",fill:"var(--mut)","font-size":12,transform:"rotate(-90 14 "+(m.t+ph/2)+")"},"Frete",svg);
+  el("line",{x1:X(300),x2:X(300),y1:m.t,y2:m.t+ph,stroke:"var(--mut)","stroke-dasharray":"4 4"},svg);
+  txt("text",{x:X(300)+6,y:m.t+12,fill:"var(--mut)","font-size":11},"frete grátis a partir de R$ 300",svg);
+  GRUPOS.forEach(function(g){
+    el("path",{d:"M"+X(0)+" "+Y(g.v)+" H"+X(300)+" V"+Y(0),fill:"none",stroke:g.cor,"stroke-width":2.5},svg);
+    txt("text",{x:X(300)-6,y:Y(g.v)-6,"text-anchor":"end",fill:"var(--tx)","font-size":11,"font-weight":600,"class":"halo"},g.nome,svg);
+  });
+  el("path",{d:"M"+X(300)+" "+Y(0)+" H"+X(600),fill:"none",stroke:"var(--tx)","stroke-width":2.5},svg);
+  txt("text",{x:X(600)+6,y:Y(0)+4,fill:"var(--tx)","font-size":11,"font-weight":600},"Grátis",svg);
+  var cur=el("line",{y1:m.t,y2:m.t+ph,stroke:"var(--laranja)","stroke-width":2},svg);
+  var pt=el("circle",{r:6,fill:"var(--laranja)",stroke:"var(--surface)","stroke-width":2},svg);
+  var hov=el("line",{y1:m.t,y2:m.t+ph,stroke:"var(--mut)","stroke-width":1,opacity:0},svg);
+  var hit=el("rect",{x:m.l,y:m.t,width:pw,height:ph,fill:"transparent"},svg);
+  hit.addEventListener("mousemove",function(ev){var r=svg.getBoundingClientRect(),sx=(ev.clientX-r.left)*W/r.width,v=Math.max(0,Math.min(600,Math.round((sx-m.l)/pw*600/10)*10));hov.setAttribute("x1",X(v));hov.setAttribute("x2",X(v));hov.setAttribute("opacity",1);
+    mostraTT(ev,"<b>Pedido de "+brl(v)+"</b><br>"+GRUPOS.map(function(g){return "<span style='display:inline-block;width:10px;height:10px;border-radius:2px;background:"+g.cor+"'></span> "+g.nome+": "+brl(frete(g.ufs[0],v))}).join("<br>"))});
+  hit.addEventListener("mouseleave",function(){hov.setAttribute("opacity",0);escondeTT()});
+  function atualiza(){
+    var v=+rg.value,f=frete(ufSel,v);
+    $("#fr-vtx").textContent=brl(v);$("#fr-call").textContent="'"+ufSel+"', "+dec(v);$("#fr-out").textContent=f===0?"Grátis (0.00)":brl(f);
+    cur.setAttribute("x1",X(v));cur.setAttribute("x2",X(v));pt.setAttribute("cx",X(v));pt.setAttribute("cy",Y(f));
+  }
+  atualiza();
+})();
+
+/* pedidos reais */
+(function(){
+  var svg=$("#pd-chart"),W=760,H=300,m={l:56,r:14,t:16,b:40},pw=W-m.l-m.r,ph=H-m.t-m.b,max=1100;
+  var n=PEDIDOS.length,bw=pw/n;
+  function Y(v){return m.t+ph-v/max*ph}
+  [0,200,400,600,800,1000].forEach(function(v){el("line",{x1:m.l,x2:m.l+pw,y1:Y(v),y2:Y(v),stroke:"var(--grid)"},svg);txt("text",{x:m.l-8,y:Y(v)+4,"text-anchor":"end",fill:"var(--mut)","font-size":11},"R$ "+v,svg)});
+  txt("text",{x:m.l+pw/2,y:H-4,"text-anchor":"middle",fill:"var(--mut)","font-size":12},"Pedidos (número do pedido)",svg);
+  var barras=PEDIDOS.map(function(p,i){
+    var x=m.l+i*bw+1,w=bw-2,y=Y(p.tot),h=m.t+ph-y,r=Math.min(4,w/2);
+    var b=el("path",{d:"M"+x+" "+(y+h)+" V"+(y+r)+" Q"+x+" "+y+" "+(x+r)+" "+y+" H"+(x+w-r)+" Q"+(x+w)+" "+y+" "+(x+w)+" "+(y+r)+" V"+(y+h)+" Z"},svg);
+    txt("text",{x:x+w/2,y:m.t+ph+14,"text-anchor":"middle",fill:"var(--mut)","font-size":9},p.id,svg);
+    var hit=el("rect",{x:m.l+i*bw,y:m.t,width:bw,height:ph,fill:"transparent"},svg);
+    hit.addEventListener("mousemove",function(ev){var f=frete(p.uf,p.tot,lim);mostraTT(ev,"<b>Pedido "+p.id+"</b> · "+p.uf+"<br>Total: "+brl(p.tot)+"<br>Frete: "+(f===0?"grátis":brl(f)))});
+    hit.addEventListener("mouseleave",escondeTT);
+    return b;
+  });
+  var linha=el("line",{x1:m.l,x2:m.l+pw,stroke:"var(--tx)","stroke-width":2,"stroke-dasharray":"6 4"},svg);
+  var lrot=txt("text",{x:m.l+pw-4,"text-anchor":"end",fill:"var(--tx)","font-size":11,"font-weight":700,"class":"halo"},"",svg);
+  var lim=300,rg=$("#pd-lim"),tb=$("#pd-tab tbody");
+  function atualiza(){
+    lim=+rg.value;$("#pd-ltx").textContent=brl(lim).replace(",00","");
+    var gratis=0,cobrado=0,rows="";
+    PEDIDOS.forEach(function(p,i){var f=frete(p.uf,p.tot,lim);if(f===0)gratis++;cobrado+=f;barras[i].setAttribute("fill",f===0?"var(--s3)":"var(--s1)");rows+="<tr><td>"+p.id+"</td><td>"+p.uf+"</td><td class='n'>"+brl(p.tot)+"</td><td class='n'>"+(f===0?"grátis":brl(f))+"</td></tr>"});
+    tb.innerHTML=rows;
+    linha.setAttribute("y1",Y(lim));linha.setAttribute("y2",Y(lim));lrot.setAttribute("y",Y(lim)-8);lrot.textContent="limite: "+brl(lim).replace(",00","");
+    $("#pd-k1").textContent=gratis+" de "+PEDIDOS.length;$("#pd-k2").textContent=brl(cobrado);$("#pd-k3").textContent=brl(cobrado/PEDIDOS.length);
+  }
+  rg.addEventListener("input",atualiza);atualiza();
+})();
+
+/* ---------- 6. ordem das condições ---------- */
+(function(){
+  var C={certa:[[1000,15],[500,10],[200,5]],errada:[[200,5],[500,10],[1000,15]]};
+  var testes=[150,199.99,200,500,750,1000,1200];
+  function esperado(v){return v>=1000?15:v>=500?10:v>=200?5:0}
+  function roda(ordem,v){for(var i=0;i<3;i++)if(v>=ordem[i][0])return ordem[i][1];return 0}
+  function codigo(o){var s="<span class='kw'>IF</span> p_valor &gt;= <span class='num'>"+o[0][0]+"</span> <span class='kw'>THEN</span>\n    <span class='kw'>SET</span> v_pct = <span class='num'>"+o[0][1]+"</span>;\n";
+    for(var i=1;i<3;i++)s+="<span class='kw'>ELSEIF</span> p_valor &gt;= <span class='num'>"+o[i][0]+"</span> <span class='kw'>THEN</span>\n    <span class='kw'>SET</span> v_pct = <span class='num'>"+o[i][1]+"</span>;\n";
+    return s+"<span class='kw'>END IF</span>;\n<span class='kw'>RETURN</span> v_pct;   <span class='cm'>-- v_pct começa com DEFAULT 0</span>"}
+  function mostra(k){
+    $("#od-code").innerHTML=codigo(C[k]);var tb=$("#od-tab tbody"),erros=0;tb.innerHTML="";
+    testes.forEach(function(v){var e=esperado(v),r=roda(C[k],v),ok=e===r;if(!ok)erros++;var tr=document.createElement("tr");tr.className=ok?"linha-ok":"linha-erro";tr.innerHTML="<td class='n'>"+brl(v)+"</td><td class='n'>"+e+"%</td><td class='n'>"+r+"%</td><td class='"+(ok?"res-ok":"res-erro")+"'>"+(ok?"✓ correto":"✗ errado")+"</td>";tb.appendChild(tr)});
+    $("#od-msg").innerHTML=erros?"<span class='res-erro'>✗ "+erros+" de "+testes.length+" testes falharam.</span> Toda compra de R$ 200 ou mais para na primeira condição e ganha só 5%. O MySQL não acusa erro nenhum: só os testes mostram o problema.":"<span class='res-ok'>✓ Todos os "+testes.length+" testes passaram.</span> A condição mais restritiva vem primeiro.";
+    $("#od-certa").setAttribute("aria-pressed",k==="certa");$("#od-errada").setAttribute("aria-pressed",k==="errada");
+    $("#od-certa").classList.toggle("sec",k!=="certa");$("#od-errada").classList.toggle("sec",k!=="errada");
+  }
+  $("#od-certa").addEventListener("click",function(){mostra("certa")});$("#od-errada").addEventListener("click",function(){mostra("errada")});
+  mostra("certa");
+})();
+
+/* ---------- 7.1 estoque ---------- */
+(function(){
+  function sit(q){return q<10?"Repor":q<20?"Atenção":q>=60?"Excesso":"OK"}
+  var inp=$("#es-in");function up(){var q=parseInt(inp.value,10);$("#es-out").textContent=isNaN(q)?"NULL":"'"+sit(q)+"'"}inp.addEventListener("input",up);up();
+  var cats=["Repor","Atenção","OK","Excesso"],faixa={"Repor":"menos de 10","Atenção":"10 a 19","OK":"20 a 59","Excesso":"60 ou mais"},cnt={};cats.forEach(function(c){cnt[c]=0});ESTOQUE.forEach(function(q){cnt[sit(q)]++});
+  var svg=$("#es-chart"),W=760,m={l:150,r:60,t:10},bh=34,gap=10,pw=W-m.l-m.r,max=40;
+  cats.forEach(function(c,i){
+    var y=m.t+i*(bh+gap),w=cnt[c]/max*pw;
+    txt("text",{x:m.l-10,y:y+bh/2-2,"text-anchor":"end",fill:"var(--tx)","font-size":13,"font-weight":700},c,svg);
+    txt("text",{x:m.l-10,y:y+bh/2+13,"text-anchor":"end",fill:"var(--mut)","font-size":11},faixa[c],svg);
+    el("line",{x1:m.l,x2:m.l,y1:y,y2:y+bh,stroke:"var(--ln)"},svg);
+    var r=4;el("path",{d:"M"+m.l+" "+y+" H"+(m.l+w-r)+" Q"+(m.l+w)+" "+y+" "+(m.l+w)+" "+(y+r)+" V"+(y+bh-r)+" Q"+(m.l+w)+" "+(y+bh)+" "+(m.l+w-r)+" "+(y+bh)+" H"+m.l+" Z",fill:"var(--s1)"},svg);
+    txt("text",{x:m.l+w+8,y:y+bh/2+5,fill:"var(--tx)","font-size":13,"font-weight":700},cnt[c]+" produtos",svg);
+    var hit=el("rect",{x:0,y:y,width:W,height:bh,fill:"transparent"},svg);
+    hit.addEventListener("mousemove",function(ev){mostraTT(ev,"<b>"+c+"</b> ("+faixa[c]+")<br>"+cnt[c]+" de "+ESTOQUE.length+" produtos")});hit.addEventListener("mouseleave",escondeTT);
+  });
+})();
+
+/* ---------- 7.2 parcela ---------- */
+(function(){
+  var sel=$("#pa-prod");PRODS.forEach(function(p,i){var o=document.createElement("option");o.value=i;o.textContent=p[0]+" ("+brl(p[1])+")";sel.appendChild(o)});
+  function parcela(v,n,j){if(n<=0)return null;var i=j/100;if(i===0)return Math.round(v/n*100)/100;return Math.round(v*i/(1-Math.pow(1+i,-n))*100)/100}
+  var svg=$("#pa-chart"),W=760,H=260,m={l:70,r:14,t:24,b:36},pw=W-m.l-m.r,ph=H-m.t-m.b,bw=pw/12;
+  function up(){
+    var p=PRODS[+sel.value],j=+$("#pa-j").value,n=+$("#pa-n").value,pc=parcela(p[1],n,j);
+    $("#pa-jtx").textContent=String(j).replace(".",",")+"%";$("#pa-ntx").textContent=n+"x";
+    $("#pa-k1").textContent=n+"x de "+brl(pc);$("#pa-k2").textContent=brl(pc*n);$("#pa-k3").textContent=brl(Math.max(0,pc*n-p[1]));
+    svg.innerHTML="";var tots=[];for(var k=1;k<=12;k++)tots.push(parcela(p[1],k,j)*k);
+    var max=Math.max.apply(null,tots)*1.08,min=0;function Y(v){return m.t+ph-(v-min)/(max-min)*ph}
+    for(var t=0;t<=4;t++){var v=max/4*t;el("line",{x1:m.l,x2:m.l+pw,y1:Y(v),y2:Y(v),stroke:"var(--grid)"},svg);txt("text",{x:m.l-8,y:Y(v)+4,"text-anchor":"end",fill:"var(--mut)","font-size":11},"R$ "+Math.round(v).toLocaleString("pt-BR"),svg)}
+    el("line",{x1:m.l,x2:m.l+pw,y1:Y(p[1]),y2:Y(p[1]),stroke:"var(--tx)","stroke-dasharray":"5 4","stroke-width":1.5},svg);
+    txt("text",{x:m.l+4,y:Y(p[1])-5,fill:"var(--tx)","font-size":11,"font-weight":600,"class":"halo"},"preço à vista",svg);
+    tots.forEach(function(tv,i){var k=i+1,x=m.l+i*bw+3,w=bw-6,y=Y(tv),h=m.t+ph-y,r=4,on=k===n;
+      el("path",{d:"M"+x+" "+(y+h)+" V"+(y+r)+" Q"+x+" "+y+" "+(x+r)+" "+y+" H"+(x+w-r)+" Q"+(x+w)+" "+y+" "+(x+w)+" "+(y+r)+" V"+(y+h)+" Z",fill:on?"var(--s3)":"var(--s1)",opacity:on?1:.75},svg);
+      txt("text",{x:x+w/2,y:m.t+ph+16,"text-anchor":"middle",fill:on?"var(--tx)":"var(--mut)","font-size":11,"font-weight":on?700:400},k+"x",svg);
+      if(on)txt("text",{x:x+w/2,y:y-6,"text-anchor":"middle",fill:"var(--tx)","font-size":11,"font-weight":700,"class":"halo"},brl(tv),svg);
+      var hit=el("rect",{x:m.l+i*bw,y:m.t,width:bw,height:ph,fill:"transparent",style:"cursor:pointer"},svg);
+      hit.addEventListener("mousemove",function(ev){mostraTT(ev,"<b>"+k+"x de "+brl(parcela(p[1],k,j))+"</b><br>Total: "+brl(tv)+"<br>Juros: "+brl(Math.max(0,tv-p[1])))});
+      hit.addEventListener("mouseleave",escondeTT);hit.addEventListener("click",function(){$("#pa-n").value=k;up()});
+    });
+  }
+  [sel,$("#pa-j"),$("#pa-n")].forEach(function(e){e.addEventListener("input",up)});up();
+})();
+
+/* ---------- 7.3 e-mail ---------- */
+(function(){
+  var inp=$("#em-in"),out=$("#em-out"),ps=$("#em-passos");
+  function mascara(e){var a=e.indexOf("@")+1;if(a<=3)return e;return e.slice(0,2)+"*".repeat(a-3)+e.slice(a-1)}
+  function roda(){
+    var e=inp.value.trim(),a=e.indexOf("@")+1,m=mascara(e);
+    ps.innerHTML="<tr><td>1</td><td><code>LOCATE('@', p_email)</code></td><td>"+a+(a===0?" (não achou o @)":"")+"</td></tr>"+
+      (a<=3?"<tr><td>2</td><td><code>IF v_arroba &lt;= 3</code></td><td>verdadeiro: devolve o e-mail sem mudar</td></tr>":
+      "<tr><td>2</td><td><code>LEFT(p_email, 2)</code></td><td>"+e.slice(0,2)+"</td></tr><tr><td>3</td><td><code>REPEAT('*', "+a+" - 3)</code></td><td>"+"*".repeat(a-3)+"</td></tr><tr><td>4</td><td><code>SUBSTRING(p_email, "+a+")</code></td><td>"+e.slice(a-1)+"</td></tr><tr><td>5</td><td><code>CONCAT(...)</code></td><td><strong>"+m+"</strong></td></tr>");
+    out.innerHTML="";var spans=[];for(var i=0;i<e.length;i++){var s=document.createElement("span");s.textContent=e[i];out.appendChild(s);spans.push(s)}
+    var i=2;function passo(){if(a<=3||i>=a-1){return}spans[i].textContent="*";spans[i].classList.add("esc");i++;setTimeout(passo,reduz?0:90)}
+    setTimeout(passo,reduz?0:250);
+  }
+  $("#em-go").addEventListener("click",roda);inp.addEventListener("keydown",function(ev){if(ev.key==="Enter")roda()});roda();
+})();
+
+/* ---------- quizzes ---------- */
+function quiz(box,QS,onResp){
+  box.innerHTML="";
+  QS.forEach(function(q,qi){
+    var d=document.createElement("div");d.className="q";
+    d.innerHTML="<p class='enun'>"+(qi+1)+". "+q.p+"</p>";
+    var fb=document.createElement("p");fb.className="fb";fb.setAttribute("aria-live","polite");
+    q.o.forEach(function(op,oi){var b=document.createElement("button");b.type="button";b.className="op";b.innerHTML=op;
+      b.addEventListener("click",function(){if(d.dataset.ok)return;var ok=oi===q.c;b.classList.add(ok?"certa":"errada");
+        if(ok){d.dataset.ok=1;fb.innerHTML="<span class='res-ok'>✓ Isso mesmo.</span> "+q.e;if(onResp)onResp(!d.dataset.errou)}else{d.dataset.errou=1;fb.innerHTML="<span class='res-erro'>✗ Ainda não.</span> Tente outra opção."}});
+      d.appendChild(b)});
+    d.appendChild(fb);box.appendChild(d);
+  });
+}
+var CL=[
+ {p:"<code>fn_frete(p_uf, p_valor)</code>: só faz contas com os parâmetros.",o:["DETERMINISTIC","READS SQL DATA","NOT DETERMINISTIC"],c:0,e:"Mesmas entradas, mesmo frete, sempre."},
+ {p:"<code>fn_qtd_pedidos(p_cliente_id)</code>: faz um SELECT COUNT(*) na tabela pedidos.",o:["NO SQL","READS SQL DATA","DETERMINISTIC"],c:1,e:"Ela lê uma tabela. O resultado muda quando entram pedidos novos."},
+ {p:"<code>fn_dias_de_cliente(p_data)</code>: usa <code>DATEDIFF(CURDATE(), p_data)</code>.",o:["DETERMINISTIC","NOT DETERMINISTIC"],c:1,e:"CURDATE() muda todo dia, então a mesma entrada dá resultados diferentes."},
+ {p:"<code>fn_celsius_para_f(p_c)</code>: devolve <code>p_c * 9 / 5 + 32</code>.",o:["NO SQL e DETERMINISTIC","READS SQL DATA"],c:0,e:"Não tem SQL dentro e o resultado é sempre o mesmo."}
+];
+quiz($("#cl"),CL);
+var QZ=[
+ {p:"Quantos valores uma função devolve?",o:["Um só, do tipo declarado em RETURNS","Quantos você quiser, separados por vírgula","Uma tabela inteira"],c:0,e:"Para devolver vários valores ou gravar dados, você vai usar stored procedures (Aula 03)."},
+ {p:"Você apagou o contêiner mysql-SEU_USUARIO e subiu de novo com o mesmo volume. As suas funções…",o:["sumiram, porque estavam na memória do contêiner","continuam lá, porque estão guardadas no banco, que mora no volume","precisam ser restauradas do phpMyAdmin"],c:1,e:"Funções fazem parte do banco, junto com tabelas e dados."},
+ {p:"Por que usamos DELIMITER $$ antes de uma função com BEGIN ... END?",o:["Para deixar a função mais rápida","Para o cliente não encerrar o comando no primeiro ; de dentro da função","Porque o MySQL 8.4 exige $$ em todo comando"],c:1,e:"Depois do END $$, volte com DELIMITER ; ."},
+ {p:"A função tem IF p_valor >= 200 ... ELSEIF p_valor >= 1000 ... . Uma compra de R$ 1.500 cai em qual caso?",o:["No de R$ 1.000, porque é o mais adequado","No de R$ 200, porque é a primeira condição verdadeira","Dá erro de sintaxe"],c:1,e:"As condições são testadas de cima para baixo. Comece pela mais restritiva."},
+ {p:"Qual destes é um bom motivo para colocar uma regra numa função do banco?",o:["A regra de frete precisa valer igual no site, no app e nos relatórios","Mudar a cor de um botão do site","Deixar o WHERE mais rápido aplicando a função sobre a coluna"],c:0,e:"Uma regra só, num lugar só. Função no WHERE sobre a coluna costuma deixar a consulta mais lenta."}
+];
+var acertos=0,resp=0;
+function placar(){$("#qz-placar").textContent=resp?("Acertos de primeira: "+acertos+" de "+QZ.length+(resp===QZ.length?(acertos===QZ.length?" · Excelente!":" · Reveja as seções das perguntas que você errou."):"")):""}
+function iniciaQuiz(){acertos=0;resp=0;quiz($("#qz"),QZ,function(primeira){resp++;if(primeira)acertos++;placar()});placar()}
+$("#qz-reset").addEventListener("click",iniciaQuiz);iniciaQuiz();
+})();
+</script>
+</body>
+</html>
