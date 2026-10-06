@@ -36,4 +36,5 @@ Para baixar tudo: `git clone https://github.com/haroldocurti/TDS01-UC4.git`
 | Aula | Data | Tema | Página |
 |---|---|---|---|
 | 01 | 05/10/2026 | TechStore Brasil vai para produção — seu servidor em contêineres | [abrir](aulas/aula01.html) |
+| 02 | 06/10/2026 | O banco da TechStore no ar e as primeiras funções no servidor | [abrir](aulas/aula02.html) |
 <!-- aulas:fim -->

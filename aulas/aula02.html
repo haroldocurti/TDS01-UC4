@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula 02: O banco da TechStore no ar e as primeiras funções no servidor (06/10/2026)</title>
+<style>
+:root{--azul:#004A8D;--laranja:#F7941D;--bg:#f6f8fb;--card:#fff;--tx:#1d2733;--mut:#5b6775;--ln:#dde3ea;--soft:#e8f0fa;--code:#0f1720;--codetx:#e6edf3;--ok:#1e7d4f}
+@media (prefers-color-scheme:dark){:root{--bg:#10151c;--card:#171f29;--tx:#e6ebf1;--mut:#9aa7b5;--ln:#2a3542;--soft:#1c3149;--azul:#7db3ee;--ok:#5cc28f}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:"Open Sans",system-ui,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;font-size:16px}
+a{color:var(--azul)}
+.top{background:#004A8D;color:#fff;border-bottom:4px solid var(--laranja);padding:20px 16px}
+.top .in{max-width:1180px;margin:0 auto}
+.top a{color:#fff;opacity:.85;font-size:.9rem;text-decoration:none}.top a:hover{opacity:1;text-decoration:underline}
+.top h1{font-family:Montserrat,system-ui,sans-serif;font-size:1.45rem;margin:6px 0 4px;line-height:1.25}
+.top .meta{opacity:.9;font-size:.92rem}
+.prog{height:8px;background:rgba(255,255,255,.25);border-radius:99px;margin-top:12px;overflow:hidden}
+.prog span{display:block;height:100%;width:0;background:var(--laranja);transition:width .3s}
+.progtx{font-size:.82rem;margin-top:4px;opacity:.9}
+.wrap{max-width:1180px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:980px){.wrap{grid-template-columns:260px 1fr}}
+nav.toc{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;align-self:start}
+@media(min-width:980px){nav.toc{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+nav.toc h2{font-family:Montserrat,system-ui,sans-serif;font-size:.85rem;color:var(--mut);margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:2px 0}
+nav.toc a{display:flex;gap:8px;align-items:flex-start;text-decoration:none;color:var(--tx);padding:5px 8px;border-radius:6px;font-size:.9rem}
+nav.toc a:hover,nav.toc a.ativo{background:var(--soft);color:var(--azul)}
+nav.toc .ck{flex:0 0 auto;width:1.1em;color:var(--ok);font-weight:700}
+.campos{background:var(--card);border:2px solid var(--laranja);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.campos h2{margin:0 0 6px;font-size:1rem}
+.campos p{margin:0 0 10px;color:var(--mut);font-size:.9rem}
+.campos .grid{display:flex;flex-wrap:wrap;gap:12px}
+.campos label{display:flex;flex-direction:column;font-size:.85rem;font-weight:600;gap:4px}
+.campos input{font:inherit;padding:8px 10px;border:1px solid var(--ln);border-radius:6px;background:var(--bg);color:var(--tx);min-width:180px}
+main{min-width:0}
+.wrap>div,.wrap>nav{min-width:0}
+main section.etapa{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px 16px;margin-bottom:18px}
+main section.etapa.feita{border-color:var(--ok)}
+main h2{font-family:Montserrat,system-ui,sans-serif;color:var(--azul);font-size:1.2rem;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+main h3{font-family:Montserrat,system-ui,sans-serif;font-size:1.02rem;margin-top:22px}
+.feito{font-family:"Open Sans",system-ui,sans-serif;font-size:.82rem;font-weight:600;color:var(--tx);display:inline-flex;gap:6px;align-items:center;border:1px solid var(--ln);border-radius:99px;padding:4px 12px;cursor:pointer;user-select:none}
+.feito input{width:16px;height:16px;accent-color:var(--ok)}
+section.feita .feito{background:var(--ok);color:#fff;border-color:var(--ok)}
+pre{position:relative;background:var(--code);color:var(--codetx);border-radius:8px;padding:38px 16px 14px;overflow-x:auto;font-size:.86rem;line-height:1.45}
+pre code{background:none;color:inherit;padding:0}
+code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+.copiar{position:absolute;top:8px;right:8px;font:inherit;font-size:.75rem;padding:3px 10px;border-radius:6px;border:1px solid #3a4756;background:#1d2733;color:#e6edf3;cursor:pointer}
+.copiar:hover{background:#2b3846}
+.tab{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--ln);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-family:Montserrat,system-ui,sans-serif;font-size:.82rem}
+blockquote{margin:12px 0;padding:10px 14px;border-left:4px solid var(--laranja);background:var(--soft);border-radius:0 8px 8px 0}
+blockquote p{margin:0}
+hr{display:none}
+mark{background:#ffd9a3;color:#1d2733;border-radius:3px;padding:0 2px}
+.intro{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px;margin-bottom:18px}
+footer{max-width:1180px;margin:0 auto;padding:8px 16px 28px;color:var(--mut);font-size:.82rem}
+@media print{nav.toc,.campos,.copiar,.feito{display:none}.wrap{display:block}body{background:#fff}}
+</style></head><body>
+<header class="top"><div class="in">
+<a href="../index.html">&larr; Todas as aulas — UC4 — Administrar e implantar servidores de banco de dados</a>
+<h1>Guia da Aula 02: O banco da TechStore no ar e as primeiras funções no servidor (06/10/2026)</h1>
+<div class="meta">UC4 — Administrar e implantar servidores de banco de dados · 06/10/2026</div>
+<div class="prog" aria-hidden="true"><span></span></div><div class="progtx" aria-live="polite"></div>
+</div></header>
+<div class="wrap">
+<nav class="toc" aria-label="Etapas da aula"><h2>Etapas</h2><ol><li><a href="#e-1-ponto-de-partida"><span class="ck"></span><span>1. Ponto de partida</span></a></li><li><a href="#e-2-antes-de-começar"><span class="ck"></span><span>2. Antes de começar</span></a></li><li><a href="#e-3-prática-2-seu-servidor-mysql-na-rede-da-turma-30"><span class="ck"></span><span>3. Prática 2: seu servidor MySQL na rede da turma (30 min)</span></a></li><li><a href="#e-4-prática-3-phpmyadmin-da-turma-10-min"><span class="ck"></span><span>4. Prática 3: phpMyAdmin da turma (10 min)</span></a></li><li><a href="#e-5-prática-4-carga-da-techstore-e-prova-de-fogo-25-"><span class="ck"></span><span>5. Prática 4: carga da TechStore e prova de fogo (25 min)</span></a></li><li><a href="#e-6-variáveis-e-funções-nativas-20-min"><span class="ck"></span><span>6. Variáveis e funções nativas (20 min)</span></a></li><li><a href="#e-7-sua-primeira-função-no-servidor-udf-20-min"><span class="ck"></span><span>7. Sua primeira função no servidor (UDF) (20 min)</span></a></li><li><a href="#e-8-desafio-a-função-de-frete-da-techstore-50-min-em"><span class="ck"></span><span>8. Desafio: a função de frete da TechStore (50 min, em duplas)</span></a></li><li><a href="#e-9-se-algo-der-errado"><span class="ck"></span><span>9. Se algo der errado</span></a></li><li><a href="#e-10-checkpoint-de-saída"><span class="ck"></span><span>10. Checkpoint de saída</span></a></li><li><a href="#e-11-reflexão"><span class="ck"></span><span>11. Reflexão</span></a></li></ol></nav>
+<div>
+<section class="campos"><h2>Personalize os comandos</h2><p>Preencha e os comandos e tabelas desta página passam a usar os seus dados. Fica salvo só neste navegador.</p><form id="campos-form" class="grid" onsubmit="return false"><label>Seu número (01 a 30)<input name="NN" autocomplete="off"></label><label>IP da VM<input name="IP-da-VM" autocomplete="off"></label><label>Seu usuário Linux<input name="SEU_USUARIO" autocomplete="off"></label></form></section>
+<main><div class="intro"><p>Ontem você subiu o seu nginx e viu na prática: <strong>o que fica dentro do contêiner morre com ele, o que fica no volume sobrevive.</strong></p>
+<p>Hoje você aplica isso ao que mais importa numa loja: o banco de dados. Primeiro, você coloca o MySQL da TechStore no ar, com os dados guardados num volume. Depois, você ensina o próprio banco a fazer contas da loja, criando as suas primeiras <strong>funções</strong> (UDF).</p>
+<p><strong>Para que serve esta aula:</strong> terminar o seu ambiente de homologação e começar a programar regras de negócio dentro do SGBD.</p>
+<p><strong>O que vamos observar:</strong></p>
+<ul>
+<li>se você sobe o MySQL com rede, porta, volume e limite de memória corretos e comprova que os dados sobrevivem ao contêiner;</li>
+<li>se você escreve uma função que segue as regras pedidas pela loja e testa o resultado antes de dizer que está pronta.</li>
+</ul>
+<hr></div>
+<section class="etapa" id="e-1-ponto-de-partida"><h2><span>1. Ponto de partida</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Responda para você mesmo(a):</p>
+<ol>
+<li>Ontem, por que a sua página nginx <strong>sumiu</strong> na primeira vez e <strong>ficou</strong> na segunda?</li>
+<li>Se a TechStore perder o contêiner do banco numa sexta à noite, o que precisa estar fora dele para a loja não perder os pedidos?</li>
+<li>Hoje o cálculo de frete da loja está escrito no site, no aplicativo e na planilha do financeiro. Que problema isso pode causar?</li>
+</ol>
+<hr>
+</section>
+<section class="etapa" id="e-2-antes-de-começar"><h2><span>2. Antes de começar</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Entre na VM: <code>ssh SEU_USUARIO@IP-da-VM</code></p>
+<p>Confira o que você já tem:</p>
+<pre><code class="language-bash">docker ps -a --filter name=$USER
+</code></pre>
+<ul>
+<li>Viu o <code>nginx-SEU_USUARIO</code> rodando? Ótimo, ele fica como está.</li>
+<li><strong>Já subiu o MySQL em casa?</strong> Vá direto para a seção 4.</li>
+</ul>
+<p>Suas portas: nginx <strong>80NN</strong> · MySQL <strong>330NN</strong> · phpMyAdmin da turma <strong>8080</strong>.</p>
+<hr>
+</section>
+<section class="etapa" id="e-3-prática-2-seu-servidor-mysql-na-rede-da-turma-30"><h2><span>3. Prática 2: seu servidor MySQL na rede da turma (30 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<h3>3.1 Bind mount × volume nomeado</h3>
+<p>Ontem você usou uma <strong>pasta sua</strong> (<code>~/site</code>) ligada ao contêiner. Isso se chama <em>bind mount</em>. Para o banco, vamos usar um <strong>volume nomeado</strong>: o próprio Docker cria e cuida da pasta.</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th></th>
+<th>Bind mount (ontem, nginx)</th>
+<th>Volume nomeado (hoje, MySQL)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Como se escreve</td>
+<td><code>-v ~/site:/usr/share/nginx/html</code></td>
+<td><code>-v dados-$USER:/var/lib/mysql</code></td>
+</tr>
+<tr>
+<td>Onde fica</td>
+<td>Na pasta que você escolheu</td>
+<td>Numa área do Docker (<code>/var/lib/docker/volumes/</code>)</td>
+</tr>
+<tr>
+<td>Quem cuida das permissões</td>
+<td>Você (lembra do <code>chmod</code>?)</td>
+<td>O Docker</td>
+</tr>
+<tr>
+<td>Bom para</td>
+<td>Arquivos que você edita: site, configuração</td>
+<td>Dados de programas: banco de dados</td>
+</tr>
+</tbody>
+</table></div>
+<h3>3.2 Conhecer a rede</h3>
+<pre><code class="language-bash">docker network ls
+docker network inspect rede-turma
+</code></pre>
+<p>A <code>rede-turma</code> foi criada pelo professor. O phpMyAdmin da turma já está nela.</p>
+<h3>3.3 Definir a senha sem deixar no histórico</h3>
+<pre><code class="language-bash">read -s -p &quot;Senha do root do MySQL: &quot; SENHA; echo
+</code></pre>
+<blockquote>
+<p>A variável <code>SENHA</code> só existe nesta sessão do terminal. Se você sair da VM e entrar de novo, rode esse comando outra vez.</p>
+</blockquote>
+<h3>3.4 Subir o MySQL</h3>
+<pre><code class="language-bash">docker run -d --name mysql-$USER \
+  --network rede-turma \
+  -p 330NN:3306 \
+  -v dados-$USER:/var/lib/mysql \
+  -e MYSQL_ROOT_PASSWORD=&quot;$SENHA&quot; \
+  --memory 512m \
+  --restart unless-stopped \
+  mysql:8.4
+</code></pre>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--network rede-turma</code></td>
+<td>Coloca o contêiner na rede da turma. O phpMyAdmin acha o banco pelo nome <code>mysql-$USER</code>.</td>
+</tr>
+<tr>
+<td><code>-p 330NN:3306</code></td>
+<td>Publica a porta do MySQL (3306 por dentro) na porta 330NN da VM.</td>
+</tr>
+<tr>
+<td><code>-v dados-$USER:/var/lib/mysql</code></td>
+<td>Volume nomeado: os arquivos do banco ficam fora do contêiner.</td>
+</tr>
+<tr>
+<td><code>-e MYSQL_ROOT_PASSWORD=...</code></td>
+<td>Define a senha do root <strong>só na primeira vez</strong>, quando o volume ainda está vazio.</td>
+</tr>
+<tr>
+<td><code>--memory 512m</code></td>
+<td>Limite de memória. A VM é de toda a turma.</td>
+</tr>
+<tr>
+<td><code>--restart unless-stopped</code></td>
+<td>Se a VM reiniciar, o contêiner volta sozinho.</td>
+</tr>
+<tr>
+<td><code>mysql:8.4</code></td>
+<td>Versão fixa. Em produção, não se usa <code>latest</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Acompanhe a inicialização:</p>
+<pre><code class="language-bash">docker logs -f mysql-$USER
+</code></pre>
+<p>Quando aparecer <code>ready for connections</code> com <code>port: 3306</code>, aperte <strong>Ctrl + C</strong> (o contêiner continua rodando).</p>
+<p>Veja o volume que o Docker criou:</p>
+<pre><code class="language-bash">docker volume ls --filter name=$USER
+docker volume inspect dados-$USER
+</code></pre>
+<p>Repare no campo <code>Mountpoint</code>: é ali que os dados do seu banco moram.</p>
+<hr>
+</section>
+<section class="etapa" id="e-4-prática-3-phpmyadmin-da-turma-10-min"><h2><span>4. Prática 3: phpMyAdmin da turma (10 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ol>
+<li>Abra <code>http://IP-da-VM:8080</code>.</li>
+<li><strong>Servidor:</strong> <code>mysql-SEU_USUARIO</code>.</li>
+<li><strong>Usuário:</strong> <code>root</code> | <strong>Senha:</strong> a sua.</li>
+</ol>
+<blockquote>
+<p>O phpMyAdmin acha o seu banco só pelo nome porque os dois estão na mesma rede Docker.</p>
+</blockquote>
+<hr>
+</section>
+<section class="etapa" id="e-5-prática-4-carga-da-techstore-e-prova-de-fogo-25-"><h2><span>5. Prática 4: carga da TechStore e prova de fogo (25 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<h3>5.1 Carregar a base</h3>
+<pre><code class="language-bash">docker exec -i -e MYSQL_PWD=&quot;$SENHA&quot; mysql-$USER \
+  mysql -uroot --default-character-set=utf8mb4 &lt; /srv/techstore/loja_teste_completo.sql
+</code></pre>
+<h3>5.2 Conferir</h3>
+<pre><code class="language-bash">docker exec -it -e MYSQL_PWD=&quot;$SENHA&quot; mysql-$USER mysql -uroot loja_teste -e &quot;
+SELECT 'clientes' tabela, COUNT(*) total FROM clientes
+UNION ALL SELECT 'produtos', COUNT(*) FROM produtos
+UNION ALL SELECT 'pedidos', COUNT(*) FROM pedidos
+UNION ALL SELECT 'itens_pedido', COUNT(*) FROM itens_pedido;&quot;
+</code></pre>
+<p>Esperado: <strong>25</strong> clientes, <strong>68</strong> produtos, <strong>27</strong> pedidos, <strong>35</strong> itens. Confira também no phpMyAdmin.</p>
+<h3>5.3 Prova de fogo: apagar o servidor do banco</h3>
+<p>Agora o mesmo experimento de ontem, com o banco. Apague o contêiner:</p>
+<pre><code class="language-bash">docker rm -f mysql-$USER
+docker ps -a --filter name=$USER      # o mysql sumiu
+docker volume ls --filter name=$USER  # o volume continua
+</code></pre>
+<p>Suba de novo com <strong>exatamente o mesmo comando</strong> da seção 3.4 e espere o <code>ready for connections</code>. Depois, rode as contagens da 5.2 outra vez.</p>
+<p><strong>Os 25 clientes continuam lá.</strong> O contêiner é descartável. Os dados, não.</p>
+<blockquote>
+<p>Repare: a senha continua a mesma de antes. Como o volume já tinha um banco, o MySQL ignorou o <code>MYSQL_ROOT_PASSWORD</code>.</p>
+</blockquote>
+<h3>5.4 Checkpoint da Aula 01 (entregue ao professor)</h3>
+<ol>
+<li>Print da sua página nginx aberta pelo IP da VM, com o seu nome.</li>
+<li>Print das contagens <strong>depois</strong> da prova de fogo (25, 68, 27, 35).</li>
+</ol>
+<hr>
+<p><strong>Intervalo (15 min)</strong></p>
+<hr>
+</section>
+<section class="etapa" id="e-6-variáveis-e-funções-nativas-20-min"><h2><span>6. Variáveis e funções nativas (20 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>O professor deixou o roteiro de hoje na VM. Copie para a sua pasta e abra o cliente do MySQL:</p>
+<pre><code class="language-bash">cp /srv/techstore/Aula02_funcoes_techstore.sql ~/
+docker exec -it -e MYSQL_PWD=&quot;$SENHA&quot; mysql-$USER \
+  mysql -uroot --default-character-set=utf8mb4 loja_teste
+</code></pre>
+<p>O arquivo também está na pasta <code>Data/</code> do repositório da UC. Você pode colar cada parte no terminal ou na aba <strong>SQL</strong> do phpMyAdmin.</p>
+<p>Rode a <strong>Parte A</strong> do roteiro:</p>
+<pre><code class="language-sql">SET @desconto = 10;
+
+SELECT nome, preco,
+       ROUND(preco * (1 - @desconto / 100), 2) AS preco_promocional,
+       IF(estoque &lt; 10, 'Repor', 'OK')         AS situacao_estoque
+FROM produtos
+ORDER BY preco DESC
+LIMIT 10;
+</code></pre>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Recurso</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SET @desconto = 10</code></td>
+<td>Cria uma <strong>variável de sessão</strong>. Ela vale até você sair do cliente.</td>
+</tr>
+<tr>
+<td><code>ROUND(valor, 2)</code></td>
+<td>Arredonda para 2 casas.</td>
+</tr>
+<tr>
+<td><code>IF(condição, sim, não)</code></td>
+<td>Escolhe um valor conforme a condição.</td>
+</tr>
+<tr>
+<td><code>CONCAT</code>, <code>UPPER</code>, <code>DATEDIFF</code>, <code>CURDATE</code></td>
+<td>Juntar texto, maiúsculas, diferença entre datas, data de hoje.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Troque o valor de <code>@desconto</code> e rode de novo. O que muda?</p>
+<hr>
+</section>
+<section class="etapa" id="e-7-sua-primeira-função-no-servidor-udf-20-min"><h2><span>7. Sua primeira função no servidor (UDF) (20 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Uma <strong>função definida pelo usuário</strong> (UDF) é uma regra que fica guardada <strong>dentro do banco</strong>. Qualquer sistema que use o banco (site, app, relatório) chama a mesma função e recebe o mesmo resultado.</p>
+<pre><code class="language-sql">CREATE FUNCTION fn_preco_com_desconto(p_preco DECIMAL(10,2), p_pct DECIMAL(5,2))
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+RETURN ROUND(p_preco * (1 - p_pct / 100), 2);
+</code></pre>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fn_preco_com_desconto</code></td>
+<td>Nome da função. O prefixo <code>fn_</code> ajuda a reconhecer.</td>
+</tr>
+<tr>
+<td><code>(p_preco ..., p_pct ...)</code></td>
+<td>Parâmetros: o que a função recebe, cada um com o seu tipo.</td>
+</tr>
+<tr>
+<td><code>RETURNS DECIMAL(10,2)</code></td>
+<td>Tipo do valor que ela devolve.</td>
+</tr>
+<tr>
+<td><code>DETERMINISTIC</code></td>
+<td>Avisa que, para as mesmas entradas, o resultado é sempre o mesmo.</td>
+</tr>
+<tr>
+<td><code>RETURN ...</code></td>
+<td>O cálculo devolvido.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Use como qualquer função nativa:</p>
+<pre><code class="language-sql">SELECT nome, preco, fn_preco_com_desconto(preco, 15) AS preco_black_friday
+FROM produtos
+WHERE categoria = 'Eletrônicos';
+</code></pre>
+<h3>Função com mais de uma linha: <code>DELIMITER</code></h3>
+<p>Quando a função tem um bloco <code>BEGIN ... END</code>, cada linha de dentro termina com <code>;</code>. Para o cliente não achar que o comando acabou no primeiro <code>;</code>, trocamos o delimitador por um tempo:</p>
+<pre><code class="language-sql">DELIMITER $$
+CREATE FUNCTION ...
+BEGIN
+    ...;
+    RETURN ...;
+END $$
+DELIMITER ;
+</code></pre>
+<blockquote>
+<p>No phpMyAdmin, a aba <strong>SQL</strong> tem o campo <strong>Delimitador</strong>. Coloque <code>$$</code> ali e não escreva as linhas <code>DELIMITER</code>.</p>
+</blockquote>
+<hr>
+</section>
+<section class="etapa" id="e-8-desafio-a-função-de-frete-da-techstore-50-min-em"><h2><span>8. Desafio: a função de frete da TechStore (50 min, em duplas)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>A equipe comercial mandou as regras de frete. Elas precisam valer igual no site, no app e nos relatórios. Por isso, a regra vai morar no banco.</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Situação</th>
+<th>Frete</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pedido a partir de R$ 300,00</td>
+<td>Grátis</td>
+</tr>
+<tr>
+<td>SP</td>
+<td>R$ 15,00</td>
+</tr>
+<tr>
+<td>RJ, MG, ES (Sudeste)</td>
+<td>R$ 25,00</td>
+</tr>
+<tr>
+<td>PR, SC, RS (Sul)</td>
+<td>R$ 30,00</td>
+</tr>
+<tr>
+<td>Demais estados</td>
+<td>R$ 45,00</td>
+</tr>
+</tbody>
+</table></div>
+<ol>
+<li>Abra a <strong>Parte C</strong> do roteiro (<code>nano ~/Aula02_funcoes_techstore.sql</code>) e complete o corpo da <code>fn_frete</code>. Use <code>IF ... THEN ... ELSEIF ... ELSE ... END IF;</code> ou <code>CASE</code>.</li>
+<li>Crie a função no seu banco.</li>
+<li>Rode os 5 testes do roteiro e compare com o esperado (15, 25, 30, 45 e 0).</li>
+<li>Combine com a sua dupla: um escreve, o outro confere os testes. Na próxima função, troquem.</li>
+</ol>
+<blockquote>
+<p><strong>Deu <code>NULL</code> nos testes?</strong> A variável <code>v_frete</code> não recebeu valor em nenhum caminho. Revise as condições.</p>
+</blockquote>
+<p><strong>Para quem terminar (Parte D):</strong> crie a <code>fn_total_pedido(id)</code>, que soma <code>quantidade * preco_unitario</code> dos itens do pedido. Ela lê dados das tabelas, então use <code>READS SQL DATA</code> no lugar de <code>DETERMINISTIC</code> e <code>SELECT ... INTO</code>. Depois rode o relatório de pedidos com total e frete que está no roteiro.</p>
+<hr>
+</section>
+<section class="etapa" id="e-9-se-algo-der-errado"><h2><span>9. Se algo der errado</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Mensagem</th>
+<th>O que fazer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port is already allocated</code></td>
+<td>Confira o seu número na tabela e <code>docker ps -a --filter name=$USER</code>.</td>
+</tr>
+<tr>
+<td><code>container name ... is already in use</code></td>
+<td><code>docker rm -f mysql-$USER</code> e suba de novo (o volume continua).</td>
+</tr>
+<tr>
+<td><code>Access denied for user 'root'</code></td>
+<td>A variável <code>SENHA</code> está vazia ou diferente. Rode o <code>read -s</code> de novo com a senha que você usou na primeira vez.</td>
+</tr>
+<tr>
+<td>phpMyAdmin: <em>getaddrinfo failed</em></td>
+<td>O MySQL não está na rede: <code>docker network connect rede-turma mysql-$USER</code>.</td>
+</tr>
+<tr>
+<td><code>ERROR 1418 ... none of DETERMINISTIC, NO SQL, or READS SQL DATA</code></td>
+<td>Falta declarar o tipo da função. Acrescente <code>DETERMINISTIC</code> (só calcula) ou <code>READS SQL DATA</code> (lê tabelas).</td>
+</tr>
+<tr>
+<td><code>ERROR 1304 ... FUNCTION ... already exists</code></td>
+<td>Rode <code>DROP FUNCTION IF EXISTS nome_da_funcao;</code> antes de criar de novo.</td>
+</tr>
+<tr>
+<td><code>ERROR 1064</code> perto de <code>END</code></td>
+<td>Faltou o <code>DELIMITER $$</code> antes ou o <code>$$</code> depois do <code>END</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Regra de convivência:</strong> só mexa em contêineres e volumes com o <strong>seu</strong> nome.</p>
+<hr>
+</section>
+<section class="etapa" id="e-10-checkpoint-de-saída"><h2><span>10. Checkpoint de saída</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ol>
+<li>Print dos 5 testes da <code>fn_frete</code> com os valores esperados.</li>
+<li>Rode e mande o print:</li>
+</ol>
+<pre><code class="language-sql">SHOW FUNCTION STATUS WHERE Db = 'loja_teste';
+</code></pre>
+<ol start="3">
+<li>Responda em 2 ou 3 linhas: as suas funções estão guardadas onde? Se o contêiner for apagado agora, elas sobrevivem? Por quê?</li>
+</ol>
+<hr>
+</section>
+<section class="etapa" id="e-11-reflexão"><h2><span>11. Reflexão</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p><strong>Domínio técnico-científico:</strong> explique para um colega, com as suas palavras, a diferença entre o contêiner e o volume do banco.</p>
+<p><strong>Colaboração e comunicação:</strong> como foi conferir os testes da sua dupla? Vocês encontraram algum erro um do outro?</p>
+<p><strong>Para a próxima aula:</strong> a função calcula, mas não grava nada. Na Aula 03, você vai criar <em>stored procedures</em> que registram um pedido de verdade, com validações.</p></section></main>
+</div></div>
+<footer>Material da UC para estudantes. Marque as etapas conforme avança; o progresso fica salvo neste navegador.</footer>
+<script type="application/json" id="campos-def">[{"chave": "NN", "rotulo": "Seu número (01 a 30)"}, {"chave": "IP-da-VM", "rotulo": "IP da VM"}, {"chave": "SEU_USUARIO", "rotulo": "Seu usuário Linux"}]</script>
+<script>
+(function(){
+  var CHAVE='educagente:'+location.pathname;
+  var campos=JSON.parse(document.getElementById('campos-def').textContent||'[]');
+  var main=document.querySelector('main');
+  var modelo=main.innerHTML;
+  function ler(k,d){try{var v=localStorage.getItem(CHAVE+':'+k);return v===null?d:JSON.parse(v);}catch(e){return d;}}
+  function gravar(k,v){try{localStorage.setItem(CHAVE+':'+k,JSON.stringify(v));}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function reRegex(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+  function personalizar(){
+    var valores=ler('campos',{});var out=modelo;
+    campos.forEach(function(c){
+      var v=(valores[c.chave]||'').trim(); if(!v) return;
+      var re=new RegExp(reRegex(c.chave),'g');
+      out=out.replace(/(<code[^>]*>)([\s\S]*?)(<\/code>)|(<td[^>]*>)([\s\S]*?)(<\/td>)/g,function(m,a1,b1,c1,a2,b2,c2){
+        if(a1) return a1+b1.replace(re,'<mark>'+esc(v)+'</mark>')+c1;
+        return a2+b2.replace(re,'<mark>'+esc(v)+'</mark>')+c2;});
+    });
+    main.innerHTML=out; montar();
+  }
+  function montar(){
+    main.querySelectorAll('pre').forEach(function(pre){
+      var b=document.createElement('button');b.className='copiar';b.type='button';b.textContent='Copiar';
+      b.addEventListener('click',function(){
+        var t=pre.querySelector('code').innerText;
+        var ok=function(){b.textContent='Copiado!';setTimeout(function(){b.textContent='Copiar';},1500);};
+        if(navigator.clipboard){navigator.clipboard.writeText(t).then(ok,function(){});}
+        else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok();}catch(e){}document.body.removeChild(ta);}
+      });
+      pre.appendChild(b);
+    });
+    var feitos=ler('feitos',{});
+    main.querySelectorAll('section.etapa').forEach(function(s){
+      var cb=s.querySelector('.feito input'); if(!cb) return;
+      cb.checked=!!feitos[s.id]; s.classList.toggle('feita',cb.checked);
+      cb.addEventListener('change',function(){var f=ler('feitos',{});f[s.id]=cb.checked;gravar('feitos',f);s.classList.toggle('feita',cb.checked);progresso();});
+    });
+    progresso();
+  }
+  function progresso(){
+    var secs=main.querySelectorAll('section.etapa'),n=0;
+    var feitos=ler('feitos',{});
+    secs.forEach(function(s){if(feitos[s.id])n++;var a=document.querySelector('nav.toc a[href="#'+s.id+'"] .ck');if(a)a.textContent=feitos[s.id]?'✓':'';});
+    var p=secs.length?Math.round(100*n/secs.length):0;
+    document.querySelector('.prog span').style.width=p+'%';
+    document.querySelector('.progtx').textContent=n+' de '+secs.length+' etapas concluídas ('+p+'%)';
+    gravar('progresso',p);
+  }
+  var form=document.getElementById('campos-form');
+  if(form){
+    var valores=ler('campos',{});
+    form.querySelectorAll('input').forEach(function(inp){
+      inp.value=valores[inp.name]||'';
+      inp.addEventListener('input',function(){var v=ler('campos',{});v[inp.name]=inp.value;gravar('campos',v);personalizar();});
+    });
+  }
+  personalizar();
+  if('IntersectionObserver' in window){
+    var links={};document.querySelectorAll('nav.toc a').forEach(function(a){links[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){Object.keys(links).forEach(function(k){links[k].classList.remove('ativo');});var l=links[e.target.id];if(l)l.classList.add('ativo');}});},{rootMargin:'-20% 0px -70% 0px'});
+    document.querySelectorAll('main section.etapa').forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body></html>
