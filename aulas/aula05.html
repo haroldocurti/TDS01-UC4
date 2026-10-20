@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula 05: A equipe de banco atende a TechStore — lista de funções (20/10/2026)</title>
+<style>
+:root{--azul:#004A8D;--laranja:#F7941D;--bg:#f6f8fb;--card:#fff;--tx:#1d2733;--mut:#5b6775;--ln:#dde3ea;--soft:#e8f0fa;--code:#0f1720;--codetx:#e6edf3;--ok:#1e7d4f}
+@media (prefers-color-scheme:dark){:root{--bg:#10151c;--card:#171f29;--tx:#e6ebf1;--mut:#9aa7b5;--ln:#2a3542;--soft:#1c3149;--azul:#7db3ee;--ok:#5cc28f}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:"Open Sans",system-ui,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;font-size:16px}
+a{color:var(--azul)}
+.top{background:#004A8D;color:#fff;border-bottom:4px solid var(--laranja);padding:20px 16px}
+.top .in{max-width:1180px;margin:0 auto}
+.top a{color:#fff;opacity:.85;font-size:.9rem;text-decoration:none}.top a:hover{opacity:1;text-decoration:underline}
+.top h1{font-family:Montserrat,system-ui,sans-serif;font-size:1.45rem;margin:6px 0 4px;line-height:1.25}
+.top .meta{opacity:.9;font-size:.92rem}
+.prog{height:8px;background:rgba(255,255,255,.25);border-radius:99px;margin-top:12px;overflow:hidden}
+.prog span{display:block;height:100%;width:0;background:var(--laranja);transition:width .3s}
+.progtx{font-size:.82rem;margin-top:4px;opacity:.9}
+.wrap{max-width:1180px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:980px){.wrap{grid-template-columns:260px 1fr}}
+nav.toc{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;align-self:start}
+@media(min-width:980px){nav.toc{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+nav.toc h2{font-family:Montserrat,system-ui,sans-serif;font-size:.85rem;color:var(--mut);margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:2px 0}
+nav.toc a{display:flex;gap:8px;align-items:flex-start;text-decoration:none;color:var(--tx);padding:5px 8px;border-radius:6px;font-size:.9rem}
+nav.toc a:hover,nav.toc a.ativo{background:var(--soft);color:var(--azul)}
+nav.toc .ck{flex:0 0 auto;width:1.1em;color:var(--ok);font-weight:700}
+.campos{background:var(--card);border:2px solid var(--laranja);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.campos h2{margin:0 0 6px;font-size:1rem}
+.campos p{margin:0 0 10px;color:var(--mut);font-size:.9rem}
+.campos .grid{display:flex;flex-wrap:wrap;gap:12px}
+.campos label{display:flex;flex-direction:column;font-size:.85rem;font-weight:600;gap:4px}
+.campos input{font:inherit;padding:8px 10px;border:1px solid var(--ln);border-radius:6px;background:var(--bg);color:var(--tx);min-width:180px}
+main{min-width:0}
+.wrap>div,.wrap>nav{min-width:0}
+main section.etapa{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px 16px;margin-bottom:18px}
+main section.etapa.feita{border-color:var(--ok)}
+main h2{font-family:Montserrat,system-ui,sans-serif;color:var(--azul);font-size:1.2rem;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+main h3{font-family:Montserrat,system-ui,sans-serif;font-size:1.02rem;margin-top:22px}
+.feito{font-family:"Open Sans",system-ui,sans-serif;font-size:.82rem;font-weight:600;color:var(--tx);display:inline-flex;gap:6px;align-items:center;border:1px solid var(--ln);border-radius:99px;padding:4px 12px;cursor:pointer;user-select:none}
+.feito input{width:16px;height:16px;accent-color:var(--ok)}
+section.feita .feito{background:var(--ok);color:#fff;border-color:var(--ok)}
+pre{position:relative;background:var(--code);color:var(--codetx);border-radius:8px;padding:38px 16px 14px;overflow-x:auto;font-size:.86rem;line-height:1.45}
+pre code{background:none;color:inherit;padding:0}
+code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+.copiar{position:absolute;top:8px;right:8px;font:inherit;font-size:.75rem;padding:3px 10px;border-radius:6px;border:1px solid #3a4756;background:#1d2733;color:#e6edf3;cursor:pointer}
+.copiar:hover{background:#2b3846}
+.tab{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--ln);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-family:Montserrat,system-ui,sans-serif;font-size:.82rem}
+blockquote{margin:12px 0;padding:10px 14px;border-left:4px solid var(--laranja);background:var(--soft);border-radius:0 8px 8px 0}
+blockquote p{margin:0}
+hr{display:none}
+mark{background:#ffd9a3;color:#1d2733;border-radius:3px;padding:0 2px}
+.intro{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px;margin-bottom:18px}
+footer{max-width:1180px;margin:0 auto;padding:8px 16px 28px;color:var(--mut);font-size:.82rem}
+@media print{nav.toc,.campos,.copiar,.feito{display:none}.wrap{display:block}body{background:#fff}}
+</style></head><body>
+<header class="top"><div class="in">
+<a href="../index.html">&larr; Todas as aulas — UC4 — Administrar e implantar servidores de banco de dados</a>
+<h1>Guia da Aula 05: A equipe de banco atende a TechStore — lista de funções (20/10/2026)</h1>
+<div class="meta">UC4 — Administrar e implantar servidores de banco de dados · 20/10/2026</div>
+<div class="prog" aria-hidden="true"><span></span></div><div class="progtx" aria-live="polite"></div>
+</div></header>
+<div class="wrap">
+<nav class="toc" aria-label="Etapas da aula"><h2>Etapas</h2><ol><li><a href="#e-1-ponto-de-partida"><span class="ck"></span><span>1. Ponto de partida</span></a></li><li><a href="#e-2-antes-de-começar-10-min"><span class="ck"></span><span>2. Antes de começar (10 min)</span></a></li><li><a href="#e-3-como-trabalhar-em-cada-exercício"><span class="ck"></span><span>3. Como trabalhar em cada exercício</span></a></li><li><a href="#e-4-nível-1-básico-40-min"><span class="ck"></span><span>4. Nível 1 — Básico (40 min)</span></a></li><li><a href="#e-5-nível-2-intermediário-55-min"><span class="ck"></span><span>5. Nível 2 — Intermediário (55 min)</span></a></li><li><a href="#e-6-nível-3-funções-que-leem-o-banco-25-min"><span class="ck"></span><span>6. Nível 3 — Funções que leem o banco (25 min)</span></a></li><li><a href="#e-7-nível-4-desafio-15-min"><span class="ck"></span><span>7. Nível 4 — Desafio (15 min)</span></a></li><li><a href="#e-8-se-algo-der-errado"><span class="ck"></span><span>8. Se algo der errado</span></a></li><li><a href="#e-9-checkpoint-de-saída"><span class="ck"></span><span>9. Checkpoint de saída</span></a></li><li><a href="#e-10-reflexão"><span class="ck"></span><span>10. Reflexão</span></a></li></ol></nav>
+<div>
+<section class="campos"><h2>Personalize os comandos</h2><p>Preencha e os comandos e tabelas desta página passam a usar os seus dados. Fica salvo só neste navegador.</p><form id="campos-form" class="grid" onsubmit="return false"><label>IP da VM<input name="IP-da-VM" autocomplete="off"></label><label>Seu usuário Linux<input name="SEU_USUARIO" autocomplete="off"></label></form></section>
+<main><div class="intro"><p>Chegou uma fila de pedidos de várias áreas da TechStore. O fiscal quer o preço com imposto. O marketing quer faixas de preço e o perfil dos clientes. O atendimento quer mensagens amigáveis. A logística quer a região e o prazo de entrega. O estoque quer saber quanto cada produto já vendeu.</p>
+<p>Todas essas regras vão morar no banco, em <strong>funções</strong>. Hoje você escreve dez delas.</p>
+<p><strong>Para que serve esta aula:</strong> praticar a escrita de funções (UDF) com regras reais da loja, do mais simples ao mais difícil.</p>
+<p><strong>O que vamos observar:</strong></p>
+<ul>
+<li>se a assinatura da função está certa: parâmetros, tipo de retorno e característica;</li>
+<li>se você testa os casos de limite antes de dizer que está pronto;</li>
+<li>se você lê a mensagem de erro e resolve.</li>
+</ul>
+<hr></div>
+<section class="etapa" id="e-1-ponto-de-partida"><h2><span>1. Ponto de partida</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ol>
+<li>Na <code>fn_frete</code>, qual foi o erro mais comum da turma? Como você percebeu?</li>
+<li>Uma função pode chamar outra função? Dê um exemplo da TechStore em que isso faria sentido.</li>
+</ol>
+<hr>
+</section>
+<section class="etapa" id="e-2-antes-de-começar-10-min"><h2><span>2. Antes de começar (10 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Entre na VM: <code>ssh SEU_USUARIO@IP-da-VM</code></p>
+<pre><code class="language-bash">read -s -p &quot;Senha do root do MySQL: &quot; SENHA; echo
+cp /srv/techstore/Aula05_exercicios_udf.sql ~/
+docker exec -it -e MYSQL_PWD=&quot;$SENHA&quot; mysql-$USER \
+  mysql -uroot --default-character-set=utf8mb4 loja_teste
+</code></pre>
+<p>O arquivo também está na pasta <code>Data/</code> do repositório da UC. Abra-o num editor (ou com <code>nano ~/Aula05_exercicios_udf.sql</code> em outro terminal) e cole cada função no cliente MySQL ou na aba <strong>SQL</strong> do phpMyAdmin.</p>
+<p><strong>Rode primeiro o bloco 0 do arquivo.</strong> Ele cria a <code>fn_total_pedido</code>, usada nos exercícios 9 e 10. Confira:</p>
+<pre><code class="language-sql">SELECT fn_total_pedido(1);   -- 330.00
+</code></pre>
+<hr>
+</section>
+<section class="etapa" id="e-3-como-trabalhar-em-cada-exercício"><h2><span>3. Como trabalhar em cada exercício</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ol>
+<li><strong>Leia o pedido</strong> da área e escreva a <strong>assinatura</strong>: nome, parâmetros com tipo, <code>RETURNS</code> e característica.</li>
+<li><strong>Olhe os testes antes de programar.</strong> Eles mostram os casos de limite.</li>
+<li>Escreva o código, crie a função e <strong>rode todos os testes</strong>.</li>
+<li>Use a função numa consulta de verdade (a linha "Uso" do exercício).</li>
+</ol>
+<p>Trabalhe em dupla: um escreve, o outro confere os testes. Troquem a cada exercício. Avance no seu ritmo: o checkpoint vai até o nível 2.</p>
+<h3>Funções nativas que ajudam hoje</h3>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Função</th>
+<th>O que faz</th>
+<th>Exemplo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ROUND(x, 2)</code></td>
+<td>Arredonda</td>
+<td><code>ROUND(10.456, 2)</code> → 10.46</td>
+</tr>
+<tr>
+<td><code>CONCAT(a, b, ...)</code></td>
+<td>Junta textos</td>
+<td><code>CONCAT('Ana', ' S.')</code> → Ana S.</td>
+</tr>
+<tr>
+<td><code>LEFT(texto, n)</code></td>
+<td>Primeiros n caracteres</td>
+<td><code>LEFT('Silva', 1)</code> → S</td>
+</tr>
+<tr>
+<td><code>SUBSTRING_INDEX(t, ' ', 1)</code></td>
+<td>Texto até o 1º espaço</td>
+<td>→ primeira palavra</td>
+</tr>
+<tr>
+<td><code>SUBSTRING_INDEX(t, ' ', -1)</code></td>
+<td>Texto depois do último espaço</td>
+<td>→ última palavra</td>
+</tr>
+<tr>
+<td><code>TRIM(texto)</code></td>
+<td>Tira espaços das pontas</td>
+<td></td>
+</tr>
+<tr>
+<td><code>DATE(datahora)</code></td>
+<td>Só a data</td>
+<td></td>
+</tr>
+<tr>
+<td><code>DATE_ADD(d, INTERVAL n DAY)</code></td>
+<td>Soma dias a uma data</td>
+<td></td>
+</tr>
+<tr>
+<td><code>HOUR(NOW())</code></td>
+<td>Hora atual</td>
+<td></td>
+</tr>
+<tr>
+<td><code>COALESCE(x, 0)</code></td>
+<td>Troca <code>NULL</code> por 0</td>
+<td></td>
+</tr>
+<tr>
+<td><code>SUM</code>, <code>AVG</code>, <code>COUNT</code></td>
+<td>Agregações</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+</section>
+<section class="etapa" id="e-4-nível-1-básico-40-min"><h2><span>4. Nível 1 — Básico (40 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Funções de uma linha: <code>RETURN ...;</code>, sem <code>DELIMITER</code>.</p>
+<h3>Exercício 1 · Fiscal: <code>fn_preco_com_imposto(p_preco, p_aliquota)</code></h3>
+<p>Devolve o preço com o imposto somado. A alíquota vem em %.</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Teste</th>
+<th>Esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fn_preco_com_imposto(100, 18)</code></td>
+<td>118.00</td>
+</tr>
+<tr>
+<td><code>fn_preco_com_imposto(250, 18)</code></td>
+<td>295.00</td>
+</tr>
+<tr>
+<td><code>fn_preco_com_imposto(80, 0)</code></td>
+<td>80.00</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Uso:</strong> liste os Eletrônicos com o preço e o preço com ICMS de 18%.</p>
+<h3>Exercício 2 · Marketing: <code>fn_faixa_preco(p_preco)</code></h3>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Preço</th>
+<th>Faixa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>menos de R$ 50</td>
+<td>Econômico</td>
+</tr>
+<tr>
+<td>menos de R$ 200</td>
+<td>Intermediário</td>
+</tr>
+<tr>
+<td>menos de R$ 1.000</td>
+<td>Premium</td>
+</tr>
+<tr>
+<td>R$ 1.000 ou mais</td>
+<td>Luxo</td>
+</tr>
+</tbody>
+</table></div>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Teste</th>
+<th>Esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fn_faixa_preco(49.99)</code></td>
+<td>Econômico</td>
+</tr>
+<tr>
+<td><code>fn_faixa_preco(50)</code></td>
+<td>Intermediário</td>
+</tr>
+<tr>
+<td><code>fn_faixa_preco(199.99)</code></td>
+<td>Intermediário</td>
+</tr>
+<tr>
+<td><code>fn_faixa_preco(1000)</code></td>
+<td>Luxo</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Uso:</strong> quantos produtos há em cada faixa? Esperado: Econômico 24, Intermediário 28, Premium 15, Luxo 1.</p>
+<h3>Exercício 3 · Atendimento: <code>fn_status_cliente(p_status)</code></h3>
+<p>O aplicativo mostra ao cliente uma mensagem no lugar do status interno.</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Mensagem</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entregue</td>
+<td>Seu pedido foi entregue</td>
+</tr>
+<tr>
+<td>Processando</td>
+<td>Seu pedido está sendo preparado</td>
+</tr>
+<tr>
+<td>Pendente</td>
+<td>Aguardando pagamento</td>
+</tr>
+<tr>
+<td>Cancelado</td>
+<td>Pedido cancelado</td>
+</tr>
+<tr>
+<td>qualquer outro</td>
+<td>Status em atualização</td>
+</tr>
+</tbody>
+</table></div>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Teste</th>
+<th>Esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fn_status_cliente('Entregue')</code></td>
+<td>Seu pedido foi entregue</td>
+</tr>
+<tr>
+<td><code>fn_status_cliente('Enviado')</code></td>
+<td>Status em atualização</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>Dica:</strong> quando você compara uma coisa só com vários valores, existe o CASE simples: <code>CASE p_status WHEN 'Entregue' THEN ... WHEN ... ELSE ... END</code>. E atenção ao tamanho do <code>VARCHAR</code> no <code>RETURNS</code>: a mensagem maior tem 31 caracteres.</p>
+</blockquote>
+<hr>
+<p><strong>Intervalo (15 min)</strong></p>
+<hr>
+</section>
+<section class="etapa" id="e-5-nível-2-intermediário-55-min"><h2><span>5. Nível 2 — Intermediário (55 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Agora com <code>BEGIN ... END</code>, texto, datas e uma função chamando outra.</p>
+<h3>Exercício 4 · Logística: <code>fn_regiao(p_uf)</code></h3>
+<p>Devolve 'Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste' ou 'Sul'. UF que não existe: <code>NULL</code>.</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Teste</th>
+<th>Esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fn_regiao('SP')</code></td>
+<td>Sudeste</td>
+</tr>
+<tr>
+<td><code>fn_regiao('BA')</code></td>
+<td>Nordeste</td>
+</tr>
+<tr>
+<td><code>fn_regiao('DF')</code></td>
+<td>Centro-Oeste</td>
+</tr>
+<tr>
+<td><code>fn_regiao('AM')</code></td>
+<td>Norte</td>
+</tr>
+<tr>
+<td><code>fn_regiao('XX')</code></td>
+<td>NULL</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Uso:</strong> clientes por região. Esperado: Sudeste 9, Sul 8, Nordeste 4, Centro-Oeste 2, Norte 2.</p>
+<h3>Exercício 5 · Logística: <code>fn_prazo_entrega(p_uf)</code></h3>
+<p>Dias para entrega. <strong>Use a <code>fn_regiao</code> dentro dela.</strong></p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Destino</th>
+<th>Prazo (dias)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SP</td>
+<td>2</td>
+</tr>
+<tr>
+<td>resto do Sudeste</td>
+<td>4</td>
+</tr>
+<tr>
+<td>Sul</td>
+<td>5</td>
+</tr>
+<tr>
+<td>Centro-Oeste</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Nordeste</td>
+<td>7</td>
+</tr>
+<tr>
+<td>Norte</td>
+<td>9</td>
+</tr>
+</tbody>
+</table></div>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Teste</th>
+<th>Esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fn_prazo_entrega('SP')</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>fn_prazo_entrega('RJ')</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>fn_prazo_entrega('GO')</code></td>
+<td>6</td>
+</tr>
+<tr>
+<td><code>fn_prazo_entrega('AM')</code></td>
+<td>9</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Uso:</strong> previsão de entrega de cada pedido:</p>
+<pre><code class="language-sql">SELECT p.id, c.estado, DATE(p.data_pedido) AS data_pedido,
+       DATE_ADD(DATE(p.data_pedido), INTERVAL fn_prazo_entrega(c.estado) DAY) AS previsao
+  FROM pedidos p JOIN clientes c ON c.id = p.cliente_id;
+</code></pre>
+<p>Confira: pedido 1 → 2024-04-12; pedido 2 → 2024-04-15; pedido 17 → 2024-05-06.</p>
+<h3>Exercício 6 · Atendimento: <code>fn_nome_curto(p_nome)</code></h3>
+<p>Primeiro nome + inicial do último sobrenome.</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Teste</th>
+<th>Esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fn_nome_curto('Ana Silva')</code></td>
+<td>Ana S.</td>
+</tr>
+<tr>
+<td><code>fn_nome_curto('Maria da Conceição Souza')</code></td>
+<td>Maria S.</td>
+</tr>
+<tr>
+<td><code>fn_nome_curto('Cher')</code></td>
+<td>Cher</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Exercício 7 · Atendimento: <code>fn_saudacao()</code></h3>
+<p>Sem parâmetros. Antes do meio-dia: 'Bom dia'. Antes das 18h: 'Boa tarde'. Depois: 'Boa noite'.</p>
+<pre><code class="language-sql">SELECT CONCAT(fn_saudacao(), ', ', fn_nome_curto(nome), '!') FROM clientes WHERE id = 1;
+-- à noite: Boa noite, Ana S.!
+</code></pre>
+<blockquote>
+<p><strong>Pense antes de escrever:</strong> chamando a função duas vezes, sem mudar nada, o resultado pode ser diferente? Então ela é <code>DETERMINISTIC</code>? Se aparecer o erro 1418, leia a mensagem: ela lista as três opções aceitas. Escolha a que diz a verdade sobre a função.</p>
+</blockquote>
+<hr>
+</section>
+<section class="etapa" id="e-6-nível-3-funções-que-leem-o-banco-25-min"><h2><span>6. Nível 3 — Funções que leem o banco (25 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Use <code>READS SQL DATA</code> e <code>SELECT ... INTO</code>.</p>
+<h3>Exercício 8 · Estoque: <code>fn_qtd_vendida(p_produto_id)</code></h3>
+<p>Unidades vendidas do produto, <strong>sem contar pedidos cancelados</strong>. Produto que nunca vendeu: 0.</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Teste</th>
+<th>Esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fn_qtd_vendida(7)</code> (Arroz Integral 1kg)</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>fn_qtd_vendida(68)</code></td>
+<td>0</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Uso:</strong> os 5 produtos mais vendidos, com o estoque ao lado.</p>
+<blockquote>
+<p>Qual a diferença entre <code>SUM</code> de nenhuma linha e zero? Teste <code>SELECT SUM(quantidade) FROM itens_pedido WHERE produto_id = 68;</code>.</p>
+</blockquote>
+<h3>Exercício 9 · Financeiro: <code>fn_ticket_medio(p_cliente_id)</code></h3>
+<p>Valor médio dos pedidos não cancelados do cliente. Sem pedidos: 0. <strong>Use a <code>fn_total_pedido</code>.</strong></p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Teste</th>
+<th>Esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fn_ticket_medio(1)</code></td>
+<td>168.83</td>
+</tr>
+<tr>
+<td><code>fn_ticket_medio(3)</code></td>
+<td>750.00</td>
+</tr>
+<tr>
+<td><code>fn_ticket_medio(4)</code> (só pedido cancelado)</td>
+<td>0.00</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+</section>
+<section class="etapa" id="e-7-nível-4-desafio-15-min"><h2><span>7. Nível 4 — Desafio (15 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<h3>Exercício 10 · Marketing: <code>fn_classifica_cliente(p_cliente_id)</code></h3>
+<p>Considere só pedidos não cancelados.</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Situação</th>
+<th>Perfil</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nenhum pedido</td>
+<td>Sem compras</td>
+</tr>
+<tr>
+<td>total gasto de R$ 1.000 ou mais</td>
+<td>VIP</td>
+</tr>
+<tr>
+<td>2 pedidos ou mais</td>
+<td>Frequente</td>
+</tr>
+<tr>
+<td>1 pedido</td>
+<td>Ocasional</td>
+</tr>
+</tbody>
+</table></div>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Teste</th>
+<th>Esperado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fn_classifica_cliente(16)</code></td>
+<td>VIP</td>
+</tr>
+<tr>
+<td><code>fn_classifica_cliente(1)</code></td>
+<td>Frequente</td>
+</tr>
+<tr>
+<td><code>fn_classifica_cliente(3)</code></td>
+<td>Ocasional</td>
+</tr>
+<tr>
+<td><code>fn_classifica_cliente(4)</code></td>
+<td>Sem compras</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Uso:</strong> clientes por perfil. Esperado: Ocasional 11, Sem compras 8, Frequente 5, VIP 1.</p>
+<blockquote>
+<p>Lembre da seção "A ordem das condições importa" na <a href="../Biblioteca/Aula02_Funcoes_UDF.html">página de funções da Biblioteca</a>.</p>
+</blockquote>
+<h3>Bônus · Painel do cliente</h3>
+<pre><code class="language-sql">SELECT c.id,
+       fn_nome_curto(c.nome)       AS cliente,
+       fn_regiao(c.estado)         AS regiao,
+       fn_ticket_medio(c.id)       AS ticket_medio,
+       fn_classifica_cliente(c.id) AS perfil
+  FROM clientes c
+ ORDER BY ticket_medio DESC
+ LIMIT 10;
+</code></pre>
+<p>Primeira linha esperada: <code>16 | Rafael M. | Nordeste | 1010.00 | VIP</code>.</p>
+<hr>
+</section>
+<section class="etapa" id="e-8-se-algo-der-errado"><h2><span>8. Se algo der errado</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Mensagem</th>
+<th>O que fazer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ERROR 1418</code></td>
+<td>Falta a característica. Escolha a verdadeira: <code>DETERMINISTIC</code>, <code>READS SQL DATA</code> ou <code>NO SQL</code>.</td>
+</tr>
+<tr>
+<td><code>ERROR 1304 ... already exists</code></td>
+<td><code>DROP FUNCTION IF EXISTS nome;</code> antes do <code>CREATE</code>.</td>
+</tr>
+<tr>
+<td><code>ERROR 1305 ... does not exist</code></td>
+<td>A função que você chamou ainda não foi criada (ou o nome está errado).</td>
+</tr>
+<tr>
+<td><code>ERROR 1406 Data too long</code></td>
+<td>O texto devolvido é maior que o <code>VARCHAR</code> do <code>RETURNS</code>.</td>
+</tr>
+<tr>
+<td><code>ERROR 1064</code> perto de <code>END</code></td>
+<td>Confira o <code>DELIMITER $$</code> e o <code>$$</code> depois do <code>END</code>.</td>
+</tr>
+<tr>
+<td>Teste devolve <code>NULL</code></td>
+<td>Faltou <code>ELSE</code> ou <code>COALESCE</code>, ou a variável não recebeu valor.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Mais erros explicados na <a href="../Biblioteca/Aula02_Funcoes_UDF.html">página de funções da Biblioteca</a>, seção 11.</p>
+<hr>
+</section>
+<section class="etapa" id="e-9-checkpoint-de-saída"><h2><span>9. Checkpoint de saída</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ol>
+<li>Print do <code>SHOW FUNCTION STATUS WHERE Db = 'loja_teste';</code> com as funções dos níveis 1 e 2.</li>
+<li>Print dos testes do exercício 5 e do exercício 7.</li>
+<li>Fez os níveis 3 e 4? Mande também o print do painel do cliente.</li>
+<li>Responda em 2 ou 3 linhas: que característica você usou na <code>fn_saudacao</code> e por quê?</li>
+</ol>
+<hr>
+</section>
+<section class="etapa" id="e-10-reflexão"><h2><span>10. Reflexão</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p><strong>Visão crítica:</strong> a Carla gastou R$ 750 num único pedido e ficou como "Ocasional". A Ana gastou menos no total e é "Frequente". A regra de perfil está boa para a TechStore? Como você mudaria?</p>
+<p><strong>Domínio técnico-científico:</strong> qual exercício foi mais difícil? Foi a lógica, a sintaxe ou a função nativa?</p>
+<p><strong>Para a próxima aula:</strong> as funções calculam, mas não gravam nada. Na Aula 06, você vai criar <em>stored procedures</em> que registram um pedido de verdade, usando as funções de hoje.</p></section></main>
+</div></div>
+<footer>Material da UC para estudantes. Marque as etapas conforme avança; o progresso fica salvo neste navegador.</footer>
+<script type="application/json" id="campos-def">[{"chave": "IP-da-VM", "rotulo": "IP da VM"}, {"chave": "SEU_USUARIO", "rotulo": "Seu usuário Linux"}]</script>
+<script>
+(function(){
+  var CHAVE='educagente:'+location.pathname;
+  var campos=JSON.parse(document.getElementById('campos-def').textContent||'[]');
+  var main=document.querySelector('main');
+  var modelo=main.innerHTML;
+  function ler(k,d){try{var v=localStorage.getItem(CHAVE+':'+k);return v===null?d:JSON.parse(v);}catch(e){return d;}}
+  function gravar(k,v){try{localStorage.setItem(CHAVE+':'+k,JSON.stringify(v));}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function reRegex(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+  function personalizar(){
+    var valores=ler('campos',{});var out=modelo;
+    campos.forEach(function(c){
+      var v=(valores[c.chave]||'').trim(); if(!v) return;
+      var re=new RegExp(reRegex(c.chave),'g');
+      out=out.replace(/(<code[^>]*>)([\s\S]*?)(<\/code>)|(<td[^>]*>)([\s\S]*?)(<\/td>)/g,function(m,a1,b1,c1,a2,b2,c2){
+        if(a1) return a1+b1.replace(re,'<mark>'+esc(v)+'</mark>')+c1;
+        return a2+b2.replace(re,'<mark>'+esc(v)+'</mark>')+c2;});
+    });
+    main.innerHTML=out; montar();
+  }
+  function montar(){
+    main.querySelectorAll('pre').forEach(function(pre){
+      var b=document.createElement('button');b.className='copiar';b.type='button';b.textContent='Copiar';
+      b.addEventListener('click',function(){
+        var t=pre.querySelector('code').innerText;
+        var ok=function(){b.textContent='Copiado!';setTimeout(function(){b.textContent='Copiar';},1500);};
+        if(navigator.clipboard){navigator.clipboard.writeText(t).then(ok,function(){});}
+        else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok();}catch(e){}document.body.removeChild(ta);}
+      });
+      pre.appendChild(b);
+    });
+    var feitos=ler('feitos',{});
+    main.querySelectorAll('section.etapa').forEach(function(s){
+      var cb=s.querySelector('.feito input'); if(!cb) return;
+      cb.checked=!!feitos[s.id]; s.classList.toggle('feita',cb.checked);
+      cb.addEventListener('change',function(){var f=ler('feitos',{});f[s.id]=cb.checked;gravar('feitos',f);s.classList.toggle('feita',cb.checked);progresso();});
+    });
+    progresso();
+  }
+  function progresso(){
+    var secs=main.querySelectorAll('section.etapa'),n=0;
+    var feitos=ler('feitos',{});
+    secs.forEach(function(s){if(feitos[s.id])n++;var a=document.querySelector('nav.toc a[href="#'+s.id+'"] .ck');if(a)a.textContent=feitos[s.id]?'✓':'';});
+    var p=secs.length?Math.round(100*n/secs.length):0;
+    document.querySelector('.prog span').style.width=p+'%';
+    document.querySelector('.progtx').textContent=n+' de '+secs.length+' etapas concluídas ('+p+'%)';
+    gravar('progresso',p);
+  }
+  var form=document.getElementById('campos-form');
+  if(form){
+    var valores=ler('campos',{});
+    form.querySelectorAll('input').forEach(function(inp){
+      inp.value=valores[inp.name]||'';
+      inp.addEventListener('input',function(){var v=ler('campos',{});v[inp.name]=inp.value;gravar('campos',v);personalizar();});
+    });
+  }
+  personalizar();
+  if('IntersectionObserver' in window){
+    var links={};document.querySelectorAll('nav.toc a').forEach(function(a){links[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){Object.keys(links).forEach(function(k){links[k].classList.remove('ativo');});var l=links[e.target.id];if(l)l.classList.add('ativo');}});},{rootMargin:'-20% 0px -70% 0px'});
+    document.querySelectorAll('main section.etapa').forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body></html>
