@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula 06: A TechStore registra pedidos com segurança — procedures e transações (26/10/2026)</title>
+<style>
+:root{--azul:#004A8D;--laranja:#F7941D;--bg:#f6f8fb;--card:#fff;--tx:#1d2733;--mut:#5b6775;--ln:#dde3ea;--soft:#e8f0fa;--code:#0f1720;--codetx:#e6edf3;--ok:#1e7d4f}
+@media (prefers-color-scheme:dark){:root{--bg:#10151c;--card:#171f29;--tx:#e6ebf1;--mut:#9aa7b5;--ln:#2a3542;--soft:#1c3149;--azul:#7db3ee;--ok:#5cc28f}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:"Open Sans",system-ui,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;font-size:16px}
+a{color:var(--azul)}
+.top{background:#004A8D;color:#fff;border-bottom:4px solid var(--laranja);padding:20px 16px}
+.top .in{max-width:1180px;margin:0 auto}
+.top a{color:#fff;opacity:.85;font-size:.9rem;text-decoration:none}.top a:hover{opacity:1;text-decoration:underline}
+.top h1{font-family:Montserrat,system-ui,sans-serif;font-size:1.45rem;margin:6px 0 4px;line-height:1.25}
+.top .meta{opacity:.9;font-size:.92rem}
+.prog{height:8px;background:rgba(255,255,255,.25);border-radius:99px;margin-top:12px;overflow:hidden}
+.prog span{display:block;height:100%;width:0;background:var(--laranja);transition:width .3s}
+.progtx{font-size:.82rem;margin-top:4px;opacity:.9}
+.wrap{max-width:1180px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:980px){.wrap{grid-template-columns:260px 1fr}}
+nav.toc{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;align-self:start}
+@media(min-width:980px){nav.toc{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+nav.toc h2{font-family:Montserrat,system-ui,sans-serif;font-size:.85rem;color:var(--mut);margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:2px 0}
+nav.toc a{display:flex;gap:8px;align-items:flex-start;text-decoration:none;color:var(--tx);padding:5px 8px;border-radius:6px;font-size:.9rem}
+nav.toc a:hover,nav.toc a.ativo{background:var(--soft);color:var(--azul)}
+nav.toc .ck{flex:0 0 auto;width:1.1em;color:var(--ok);font-weight:700}
+.campos{background:var(--card);border:2px solid var(--laranja);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.campos h2{margin:0 0 6px;font-size:1rem}
+.campos p{margin:0 0 10px;color:var(--mut);font-size:.9rem}
+.campos .grid{display:flex;flex-wrap:wrap;gap:12px}
+.campos label{display:flex;flex-direction:column;font-size:.85rem;font-weight:600;gap:4px}
+.campos input{font:inherit;padding:8px 10px;border:1px solid var(--ln);border-radius:6px;background:var(--bg);color:var(--tx);min-width:180px}
+main{min-width:0}
+.wrap>div,.wrap>nav{min-width:0}
+main section.etapa{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px 16px;margin-bottom:18px}
+main section.etapa.feita{border-color:var(--ok)}
+main h2{font-family:Montserrat,system-ui,sans-serif;color:var(--azul);font-size:1.2rem;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+main h3{font-family:Montserrat,system-ui,sans-serif;font-size:1.02rem;margin-top:22px}
+.feito{font-family:"Open Sans",system-ui,sans-serif;font-size:.82rem;font-weight:600;color:var(--tx);display:inline-flex;gap:6px;align-items:center;border:1px solid var(--ln);border-radius:99px;padding:4px 12px;cursor:pointer;user-select:none}
+.feito input{width:16px;height:16px;accent-color:var(--ok)}
+section.feita .feito{background:var(--ok);color:#fff;border-color:var(--ok)}
+pre{position:relative;background:var(--code);color:var(--codetx);border-radius:8px;padding:38px 16px 14px;overflow-x:auto;font-size:.86rem;line-height:1.45}
+pre code{background:none;color:inherit;padding:0}
+code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+.copiar{position:absolute;top:8px;right:8px;font:inherit;font-size:.75rem;padding:3px 10px;border-radius:6px;border:1px solid #3a4756;background:#1d2733;color:#e6edf3;cursor:pointer}
+.copiar:hover{background:#2b3846}
+.tab{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--ln);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-family:Montserrat,system-ui,sans-serif;font-size:.82rem}
+blockquote{margin:12px 0;padding:10px 14px;border-left:4px solid var(--laranja);background:var(--soft);border-radius:0 8px 8px 0}
+blockquote p{margin:0}
+hr{display:none}
+mark{background:#ffd9a3;color:#1d2733;border-radius:3px;padding:0 2px}
+.intro{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px;margin-bottom:18px}
+footer{max-width:1180px;margin:0 auto;padding:8px 16px 28px;color:var(--mut);font-size:.82rem}
+@media print{nav.toc,.campos,.copiar,.feito{display:none}.wrap{display:block}body{background:#fff}}
+</style></head><body>
+<header class="top"><div class="in">
+<a href="../index.html">&larr; Todas as aulas — UC4 — Administrar e implantar servidores de banco de dados</a>
+<h1>Guia da Aula 06: A TechStore registra pedidos com segurança — procedures e transações (26/10/2026)</h1>
+<div class="meta">UC4 — Administrar e implantar servidores de banco de dados · 26/10/2026</div>
+<div class="prog" aria-hidden="true"><span></span></div><div class="progtx" aria-live="polite"></div>
+</div></header>
+<div class="wrap">
+<nav class="toc" aria-label="Etapas da aula"><h2>Etapas</h2><ol><li><a href="#e-1-ponto-de-partida"><span class="ck"></span><span>1. Ponto de partida</span></a></li><li><a href="#e-2-antes-de-começar-15-min"><span class="ck"></span><span>2. Antes de começar (15 min)</span></a></li><li><a href="#e-3-parte-a-parâmetros-in-out-e-inout-20-min"><span class="ck"></span><span>3. Parte A: parâmetros IN, OUT e INOUT (20 min)</span></a></li><li><a href="#e-4-parte-b-controle-de-fluxo-25-min"><span class="ck"></span><span>4. Parte B: controle de fluxo (25 min)</span></a></li><li><a href="#e-5-parte-c-o-desafio-sp_registrar_pedido-60-min-em-"><span class="ck"></span><span>5. Parte C: o desafio, <code>sp_registrar_pedido</code> (60 min, em duplas)</span></a></li><li><a href="#e-6-parte-d-cancelamento-para-ler-15-min"><span class="ck"></span><span>6. Parte D: cancelamento, para ler (15 min)</span></a></li><li><a href="#e-7-parte-e-duas-sessões-no-mesmo-banco-35-min-em-du"><span class="ck"></span><span>7. Parte E: duas sessões no mesmo banco (35 min, em duplas)</span></a></li><li><a href="#e-8-se-algo-der-errado"><span class="ck"></span><span>8. Se algo der errado</span></a></li><li><a href="#e-9-checkpoint-de-saída"><span class="ck"></span><span>9. Checkpoint de saída</span></a></li><li><a href="#e-10-reflexão"><span class="ck"></span><span>10. Reflexão</span></a></li></ol></nav>
+<div>
+<section class="campos"><h2>Personalize os comandos</h2><p>Preencha e os comandos e tabelas desta página passam a usar os seus dados. Fica salvo só neste navegador.</p><form id="campos-form" class="grid" onsubmit="return false"><label>IP da VM<input name="IP-da-VM" autocomplete="off"></label><label>Seu usuário Linux<input name="SEU_USUARIO" autocomplete="off"></label></form></section>
+<main><div class="intro"><p>Até agora, as suas funções calculavam: frete, desconto, classificação de cliente. Hoje a loja precisa <strong>gravar</strong>. Quando alguém compra um Monitor, três coisas acontecem: o pedido é criado, o item é registrado e o estoque diminui. Se só duas delas acontecerem, a loja vende produto que não tem, ou cobra um pedido que não existe.</p>
+<p>Hoje você escreve <strong>procedures</strong>: rotinas que gravam dados, e <strong>transações</strong>, que fazem essas etapas acontecer todas juntas ou nenhuma delas.</p>
+<p><strong>Para que serve esta aula:</strong> escrever rotinas que alteram o banco com segurança.</p>
+<p><strong>O que vamos observar:</strong>
+- se a sua rotina valida os dados antes de gravar;
+- se ela desfaz tudo quando algo dá errado;
+- se você consegue explicar o que acontece quando duas sessões mexem no mesmo dado.</p>
+<hr></div>
+<section class="etapa" id="e-1-ponto-de-partida"><h2><span>1. Ponto de partida</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Responda para você mesmo(a), sem consultar nada:</p>
+<ol>
+<li>Qual a diferença entre uma <strong>função</strong> e uma <strong>procedure</strong>? Pense no que cada uma devolve e no que pode alterar.</li>
+<li>Imagine que o pedido foi gravado, mas o estoque não foi baixado porque o sistema caiu no meio. O que a loja precisa garantir?</li>
+</ol>
+<hr>
+</section>
+<section class="etapa" id="e-2-antes-de-começar-15-min"><h2><span>2. Antes de começar (15 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Entre na VM: <code>ssh SEU_USUARIO@IP-da-VM</code></p>
+<p>Entre no MySQL do seu contêiner:</p>
+<pre><code class="language-bash">read -s -p &quot;Senha do root do MySQL: &quot; SENHA; echo
+cp /srv/techstore/Aula06_procedures_techstore.sql ~/
+docker exec -it -e MYSQL_PWD=&quot;$SENHA&quot; mysql-$USER \
+  mysql -uroot --default-character-set=utf8mb4 loja_teste
+</code></pre>
+<blockquote>
+<p>A variável <code>SENHA</code> só existe nesta sessão do terminal. Se você sair da VM, rode o <code>read -s</code> de novo.</p>
+</blockquote>
+<p>Confira as funções das aulas anteriores. A procedure de hoje depende delas:</p>
+<pre><code class="language-sql">SHOW FUNCTION STATUS WHERE Db = 'loja_teste';
+</code></pre>
+<p>Você precisa ver <code>fn_frete</code> e <code>fn_total_pedido</code>. Se não aparecerem, avise o professor.</p>
+<p>O arquivo também está na pasta <code>Data/</code> do repositório da UC.</p>
+<hr>
+</section>
+<section class="etapa" id="e-3-parte-a-parâmetros-in-out-e-inout-20-min"><h2><span>3. Parte A: parâmetros IN, OUT e INOUT (20 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Uma procedure recebe e devolve valores por três tipos de parâmetro:</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Quem entra</th>
+<th>Quem sai</th>
+<th>Exemplo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>IN</code></td>
+<td>quem chama envia o valor</td>
+<td>—</td>
+<td>o id do cliente</td>
+</tr>
+<tr>
+<td><code>OUT</code></td>
+<td>—</td>
+<td>a procedure devolve o valor</td>
+<td>o número do pedido criado</td>
+</tr>
+<tr>
+<td><code>INOUT</code></td>
+<td>envia e recebe</td>
+<td>envia e recebe</td>
+<td>um contador que a procedure aumenta</td>
+</tr>
+</tbody>
+</table></div>
+<p>Rode a <strong>Parte A</strong> do roteiro:</p>
+<pre><code class="language-sql">SET @contador = 10;
+CALL sp_demo_parametros(7, @dobro, @contador);
+SELECT @dobro AS dobro, @contador AS contador;   -- 14 e 11
+</code></pre>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CALL</code></td>
+<td>Executa a procedure. Ao contrário de uma função, não é usada dentro de um <code>SELECT</code>.</td>
+</tr>
+<tr>
+<td><code>@dobro</code> e <code>@contador</code></td>
+<td>Variáveis de sessão. Guardam o valor que a procedure devolve.</td>
+</tr>
+<tr>
+<td><code>SET p_dobro = ...</code></td>
+<td>Dentro da procedure, grava no parâmetro <code>OUT</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Experimente:</strong> rode <code>CALL sp_demo_parametros(7, @dobro, @contador);</code> de novo. O que muda? Por quê?</p>
+<hr>
+</section>
+<section class="etapa" id="e-4-parte-b-controle-de-fluxo-25-min"><h2><span>4. Parte B: controle de fluxo (25 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>A procedure pode decidir o que fazer com <code>IF</code>, <code>CASE</code> e <code>LOOP</code>.</p>
+<p>Leia <code>sp_classifica_pedido</code> no roteiro e rode:</p>
+<pre><code class="language-sql">CALL sp_classifica_pedido(1, @msg);   SELECT @msg;   -- Concluído
+CALL sp_classifica_pedido(3, @msg);   SELECT @msg;   -- Em andamento
+CALL sp_classifica_pedido(999, @msg); SELECT @msg;   -- Pedido não existe
+</code></pre>
+<p><strong>Exercício 1:</strong> acrescente o status <code>Pendente</code> ao <code>CASE</code>, com a mensagem "Aguardando pagamento". Recrie a procedure com <code>DROP PROCEDURE IF EXISTS</code> e teste com um pedido com esse status (crie um pedido de teste com <code>UPDATE pedidos SET status = 'Pendente' WHERE id = 3;</code>).</p>
+<p><strong>Exercício 2:</strong> rode <code>sp_contagem(5)</code>. Depois, mude o valor para 3 e para 0. O que acontece com 0? Por que o <code>LEAVE</code> vem antes do <code>SET</code>?</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Comando</th>
+<th>O que faz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>IF ... THEN ... ELSE ... END IF</code></td>
+<td>Escolhe um caminho.</td>
+</tr>
+<tr>
+<td><code>CASE valor WHEN ... THEN ... END CASE</code></td>
+<td>Escolhe um caminho conforme o valor.</td>
+</tr>
+<tr>
+<td><code>LOOP ... LEAVE ... END LOOP</code></td>
+<td>Repete até um <code>LEAVE</code> sair do laço.</td>
+</tr>
+</tbody>
+</table></div>
+<hr>
+</section>
+<section class="etapa" id="e-5-parte-c-o-desafio-sp_registrar_pedido-60-min-em-"><h2><span>5. Parte C: o desafio, <code>sp_registrar_pedido</code> (60 min, em duplas)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Esta é a rotina principal da aula. Ela registra um pedido de um produto, para um cliente, em uma transação.</p>
+<p>O roteiro traz a assinatura pronta e <strong>oito TODOs</strong>, um para cada passo. Preencha cada um, na ordem:</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>TODO</th>
+<th>O que escrever</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Um <code>DECLARE EXIT HANDLER FOR SQLEXCEPTION</code> com <code>ROLLBACK;</code> e <code>RESIGNAL;</code> dentro de um <code>BEGIN ... END</code>.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Se a quantidade for <code>NULL</code> ou menor que 1: <code>SIGNAL</code> com a mensagem "Quantidade deve ser maior que zero".</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>SELECT estado INTO v_uf FROM clientes WHERE id = p_cliente_id;</code>. Se <code>v_uf</code> continuar <code>NULL</code>, <code>SIGNAL</code> com "Cliente não encontrado".</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>SELECT preco, estoque INTO ... FROM produtos WHERE id = ... FOR UPDATE;</code>. Se o preço for <code>NULL</code>, <code>SIGNAL</code> com "Produto não encontrado".</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Se o estoque for menor que a quantidade, <code>SIGNAL</code> com <code>CONCAT('Estoque insuficiente: restam ', v_estoque, ' unidades')</code>.</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>START TRANSACTION;</code>, depois o <code>INSERT</code> do pedido com status <code>'Processando'</code>, e <code>SET p_pedido_id = LAST_INSERT_ID();</code>.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>O <code>INSERT</code> do item com o <code>v_preco</code>, e o <code>UPDATE</code> que baixa o estoque.</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>SET v_total = fn_total_pedido(p_pedido_id);</code>, <code>SET p_frete = fn_frete(v_uf, v_total);</code> e <code>COMMIT;</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Dicas:</strong></p>
+<ul>
+<li>Em <code>SIGNAL</code>, a mensagem precisa estar numa variável: escreva <code>SET v_msg = ...;</code> antes.</li>
+<li>Antes de compilar, leia o <code>SIGNAL</code> do roteiro (ele serve de modelo).</li>
+<li>Compile o bloco inteiro e confira erros de sintaxe antes de testar.</li>
+</ul>
+<h3>Teste o caso feliz</h3>
+<pre><code class="language-sql">CALL sp_registrar_pedido(1, 2, 2, @pedido, @frete);
+SELECT @pedido AS pedido, @frete AS frete;
+</code></pre>
+<p>Esperado: um número de pedido novo (28 se você estiver no banco limpo) e frete <code>15.00</code> (cliente de SP, total R$ 160 &lt; R$ 300).</p>
+<p>Confira o que foi gravado:</p>
+<pre><code class="language-sql">SELECT * FROM pedidos WHERE id = @pedido;
+SELECT * FROM itens_pedido WHERE pedido_id = @pedido;
+SELECT id, estoque FROM produtos WHERE id = 2;   -- estoque diminuiu em 2
+</code></pre>
+<h3>Teste os erros: nada pode ser gravado</h3>
+<p>Rode cada um e anote a mensagem:</p>
+<pre><code class="language-sql">CALL sp_registrar_pedido(1, 2, 0, @p, @f);      -- quantidade zero
+CALL sp_registrar_pedido(999, 2, 1, @p, @f);    -- cliente inexistente
+CALL sp_registrar_pedido(1, 999, 1, @p, @f);    -- produto inexistente
+CALL sp_registrar_pedido(1, 10, 99, @p, @f);    -- estoque insuficiente (a Cadeira Gamer tem 5)
+SELECT MAX(id) AS ultimo_pedido FROM pedidos;   -- continua sendo o caso feliz
+</code></pre>
+<p>Se o último pedido mudou, a sua transação não está protegendo a gravação. Revise o TODO 1 e o <code>ROLLBACK</code>.</p>
+<blockquote>
+<p><strong>Pergunta de dupla:</strong> se o <code>ROLLBACK</code> do handler fosse removido, o que aconteceria no erro de estoque? Teste e explique.</p>
+</blockquote>
+<hr>
+</section>
+<section class="etapa" id="e-6-parte-d-cancelamento-para-ler-15-min"><h2><span>6. Parte D: cancelamento, para ler (15 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>A procedure <code>sp_cancelar_pedido</code> já vem pronta. Leia com calma e responda em dupla:</p>
+<ol>
+<li>Por que o <code>SELECT ... FOR UPDATE</code> está antes do <code>IF</code>? O que aconteceria sem ele?</li>
+<li>O <code>UPDATE produtos p JOIN itens_pedido i ...</code> devolve o estoque. Por que ele não precisa de um <code>WHERE</code> com o produto?</li>
+<li>A procedure impede cancelar pedido entregue. Por que essa regra mora no banco e não só no site?</li>
+</ol>
+<p>Cancele o pedido que você criou no desafio:</p>
+<pre><code class="language-sql">CALL sp_cancelar_pedido(@pedido);
+SELECT id, estoque FROM produtos WHERE id = 2;   -- voltou ao valor anterior
+CALL sp_cancelar_pedido(1);                      -- Pedido já entregue não pode ser cancelado
+</code></pre>
+<hr>
+<p><strong>Intervalo (15 min)</strong></p>
+<hr>
+</section>
+<section class="etapa" id="e-7-parte-e-duas-sessões-no-mesmo-banco-35-min-em-du"><h2><span>7. Parte E: duas sessões no mesmo banco (35 min, em duplas)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Esta parte precisa de <strong>dois terminais</strong>. Cada um abre sua própria sessão no MySQL:</p>
+<pre><code class="language-bash">docker exec -it -e MYSQL_PWD=&quot;$SENHA&quot; mysql-$USER \
+  mysql -uroot --default-character-set=utf8mb4 loja_teste
+</code></pre>
+<p>Uma pessoa da dupla é a <strong>sessão A</strong>, a outra é a <strong>sessão B</strong>. Siga a ordem exata de cada experimento. Anote o que cada sessão viu.</p>
+<h3>E1. Atomicidade: o ROLLBACK desfaz tudo</h3>
+<pre><code class="language-sql">-- sessão A
+START TRANSACTION;
+UPDATE produtos SET estoque = estoque - 10 WHERE id = 1;
+SELECT estoque FROM produtos WHERE id = 1;     -- anote o valor
+ROLLBACK;
+SELECT estoque FROM produtos WHERE id = 1;     -- anote o valor
+</code></pre>
+<p>Depois do <code>ROLLBACK</code>, o estoque voltou. Por quê?</p>
+<h3>E2. Isolamento: a sessão B vê o que a A não confirmou?</h3>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Passo</th>
+<th>Sessão</th>
+<th>Comando</th>
+<th>O que você vê</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>A</td>
+<td><code>START TRANSACTION; UPDATE produtos SET estoque = 0 WHERE id = 1;</code> (sem COMMIT)</td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>B</td>
+<td><code>SELECT estoque FROM produtos WHERE id = 1;</code></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td>B</td>
+<td><code>SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;</code> e depois o <code>SELECT</code> de novo</td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td>A</td>
+<td><code>ROLLBACK;</code></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>B</td>
+<td><code>SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;</code></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>No passo 2, a sessão B viu 0 ou o valor antigo? E no passo 3? Por que a diferença?</p>
+<h3>E3. Deadlock: duas sessões esperando uma pela outra</h3>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Passo</th>
+<th>Sessão</th>
+<th>Comando</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>A</td>
+<td><code>START TRANSACTION; UPDATE produtos SET estoque = estoque - 1 WHERE id = 1;</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>B</td>
+<td><code>START TRANSACTION; UPDATE produtos SET estoque = estoque - 1 WHERE id = 2;</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>A</td>
+<td><code>UPDATE produtos SET estoque = estoque - 1 WHERE id = 2;</code> (vai esperar a B)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>B</td>
+<td><code>UPDATE produtos SET estoque = estoque - 1 WHERE id = 1;</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>No passo 4, uma das sessões deve receber <code>ERROR 1213 (40001): Deadlock found</code>. Qual delas? O que a outra sessão pode fazer agora?</p>
+<p>Para terminar, cada sessão dá <code>ROLLBACK;</code> (ou <code>COMMIT;</code>, se preferir), e os estoques voltam ao normal.</p>
+<blockquote>
+<p><strong>Conexão com o desafio:</strong> o <code>FOR UPDATE</code> do <code>sp_registrar_pedido</code> evita que duas compras simultâneas do último Monitor leiam o mesmo estoque. Como a sessão A e a B se comportariam se as duas chamassem a procedure ao mesmo tempo?</p>
+</blockquote>
+<hr>
+</section>
+<section class="etapa" id="e-8-se-algo-der-errado"><h2><span>8. Se algo der errado</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Mensagem</th>
+<th>O que fazer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ERROR 1644 (45000)</code></td>
+<td>É um <code>SIGNAL</code> da sua procedure. A mensagem diz o motivo. Não é bug, é a validação funcionando.</td>
+</tr>
+<tr>
+<td><code>ERROR 1305 ... FUNCTION ... does not exist</code></td>
+<td>Falta <code>fn_frete</code> ou <code>fn_total_pedido</code> no seu banco. Veja a seção 2.</td>
+</tr>
+<tr>
+<td><code>ERROR 1064</code> perto de <code>END</code></td>
+<td>Confira o <code>DELIMITER $$</code> e o <code>$$</code> depois do <code>END</code> da procedure.</td>
+</tr>
+<tr>
+<td><code>ERROR 1213 Deadlock found</code></td>
+<td>Esperado na E3. A transação da vítima foi desfeita: rode <code>ROLLBACK;</code> nela.</td>
+</tr>
+<tr>
+<td><code>ERROR 1205 Lock wait timeout</code></td>
+<td>A sessão B esperou demais pela A. Dê <code>COMMIT</code> ou <code>ROLLBACK</code> na A.</td>
+</tr>
+<tr>
+<td><code>@pedido</code> ou <code>@frete</code> aparecem como <code>NULL</code></td>
+<td>A procedure deu erro, ou o TODO 8 não foi escrito. Veja a mensagem anterior.</td>
+</tr>
+<tr>
+<td><code>ERROR 1054 Unknown column</code></td>
+<td>Confira o nome da coluna na tabela (<code>SHOW COLUMNS FROM pedidos;</code>).</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Regra de convivência:</strong> a base é da turma, mas o banco é o seu. Não mexa no <code>mysql-</code> de outras pessoas.</p>
+<hr>
+</section>
+<section class="etapa" id="e-9-checkpoint-de-saída"><h2><span>9. Checkpoint de saída</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ol>
+<li>Print do <code>CALL sp_registrar_pedido(1, 2, 2, @pedido, @frete);</code> com o pedido e o frete devolvidos.</li>
+<li>Print das quatro mensagens de erro (quantidade, cliente, produto, estoque).</li>
+<li>Responda em 2 ou 3 linhas: por que a procedure precisa de <code>START TRANSACTION</code> e <code>COMMIT</code>? O que o site sozinho não garante?</li>
+</ol>
+<hr>
+</section>
+<section class="etapa" id="e-10-reflexão"><h2><span>10. Reflexão</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p><strong>Domínio técnico-científico:</strong> explique com as suas palavras o que é uma transação e o que é atomicidade.</p>
+<p><strong>Visão crítica:</strong> se o cliente clicar duas vezes em "comprar", o que a procedure faz? Você acha suficiente? O que mais precisaria ser garantido?</p>
+<p><strong>Para a próxima aula:</strong> a procedure registra o pedido, mas ninguém guarda o histórico das alterações do estoque. Na Aula 07, você vai criar <em>triggers</em> que registram cada mudança automaticamente, e montar o Pacote de rotinas da TechStore: a Entrega 1 da UC.</p></section></main>
+</div></div>
+<footer>Material da UC para estudantes. Marque as etapas conforme avança; o progresso fica salvo neste navegador.</footer>
+<script type="application/json" id="campos-def">[{"chave": "IP-da-VM", "rotulo": "IP da VM"}, {"chave": "SEU_USUARIO", "rotulo": "Seu usuário Linux"}]</script>
+<script>
+(function(){
+  var CHAVE='educagente:'+location.pathname;
+  var campos=JSON.parse(document.getElementById('campos-def').textContent||'[]');
+  var main=document.querySelector('main');
+  var modelo=main.innerHTML;
+  function ler(k,d){try{var v=localStorage.getItem(CHAVE+':'+k);return v===null?d:JSON.parse(v);}catch(e){return d;}}
+  function gravar(k,v){try{localStorage.setItem(CHAVE+':'+k,JSON.stringify(v));}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function reRegex(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+  function personalizar(){
+    var valores=ler('campos',{});var out=modelo;
+    campos.forEach(function(c){
+      var v=(valores[c.chave]||'').trim(); if(!v) return;
+      var re=new RegExp(reRegex(c.chave),'g');
+      out=out.replace(/(<code[^>]*>)([\s\S]*?)(<\/code>)|(<td[^>]*>)([\s\S]*?)(<\/td>)/g,function(m,a1,b1,c1,a2,b2,c2){
+        if(a1) return a1+b1.replace(re,'<mark>'+esc(v)+'</mark>')+c1;
+        return a2+b2.replace(re,'<mark>'+esc(v)+'</mark>')+c2;});
+    });
+    main.innerHTML=out; montar();
+  }
+  function montar(){
+    main.querySelectorAll('pre').forEach(function(pre){
+      var b=document.createElement('button');b.className='copiar';b.type='button';b.textContent='Copiar';
+      b.addEventListener('click',function(){
+        var t=pre.querySelector('code').innerText;
+        var ok=function(){b.textContent='Copiado!';setTimeout(function(){b.textContent='Copiar';},1500);};
+        if(navigator.clipboard){navigator.clipboard.writeText(t).then(ok,function(){});}
+        else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok();}catch(e){}document.body.removeChild(ta);}
+      });
+      pre.appendChild(b);
+    });
+    var feitos=ler('feitos',{});
+    main.querySelectorAll('section.etapa').forEach(function(s){
+      var cb=s.querySelector('.feito input'); if(!cb) return;
+      cb.checked=!!feitos[s.id]; s.classList.toggle('feita',cb.checked);
+      cb.addEventListener('change',function(){var f=ler('feitos',{});f[s.id]=cb.checked;gravar('feitos',f);s.classList.toggle('feita',cb.checked);progresso();});
+    });
+    progresso();
+  }
+  function progresso(){
+    var secs=main.querySelectorAll('section.etapa'),n=0;
+    var feitos=ler('feitos',{});
+    secs.forEach(function(s){if(feitos[s.id])n++;var a=document.querySelector('nav.toc a[href="#'+s.id+'"] .ck');if(a)a.textContent=feitos[s.id]?'✓':'';});
+    var p=secs.length?Math.round(100*n/secs.length):0;
+    document.querySelector('.prog span').style.width=p+'%';
+    document.querySelector('.progtx').textContent=n+' de '+secs.length+' etapas concluídas ('+p+'%)';
+    gravar('progresso',p);
+  }
+  var form=document.getElementById('campos-form');
+  if(form){
+    var valores=ler('campos',{});
+    form.querySelectorAll('input').forEach(function(inp){
+      inp.value=valores[inp.name]||'';
+      inp.addEventListener('input',function(){var v=ler('campos',{});v[inp.name]=inp.value;gravar('campos',v);personalizar();});
+    });
+  }
+  personalizar();
+  if('IntersectionObserver' in window){
+    var links={};document.querySelectorAll('nav.toc a').forEach(function(a){links[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){Object.keys(links).forEach(function(k){links[k].classList.remove('ativo');});var l=links[e.target.id];if(l)l.classList.add('ativo');}});},{rootMargin:'-20% 0px -70% 0px'});
+    document.querySelectorAll('main section.etapa').forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body></html>
