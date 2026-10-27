@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula 07: três procedures para a TechStore (27/10/2026)</title>
+<style>
+:root{--azul:#004A8D;--laranja:#F7941D;--bg:#f6f8fb;--card:#fff;--tx:#1d2733;--mut:#5b6775;--ln:#dde3ea;--soft:#e8f0fa;--code:#0f1720;--codetx:#e6edf3;--ok:#1e7d4f}
+@media (prefers-color-scheme:dark){:root{--bg:#10151c;--card:#171f29;--tx:#e6ebf1;--mut:#9aa7b5;--ln:#2a3542;--soft:#1c3149;--azul:#7db3ee;--ok:#5cc28f}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:"Open Sans",system-ui,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.6;font-size:16px}
+a{color:var(--azul)}
+.top{background:#004A8D;color:#fff;border-bottom:4px solid var(--laranja);padding:20px 16px}
+.top .in{max-width:1180px;margin:0 auto}
+.top a{color:#fff;opacity:.85;font-size:.9rem;text-decoration:none}.top a:hover{opacity:1;text-decoration:underline}
+.top h1{font-family:Montserrat,system-ui,sans-serif;font-size:1.45rem;margin:6px 0 4px;line-height:1.25}
+.top .meta{opacity:.9;font-size:.92rem}
+.prog{height:8px;background:rgba(255,255,255,.25);border-radius:99px;margin-top:12px;overflow:hidden}
+.prog span{display:block;height:100%;width:0;background:var(--laranja);transition:width .3s}
+.progtx{font-size:.82rem;margin-top:4px;opacity:.9}
+.wrap{max-width:1180px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:980px){.wrap{grid-template-columns:260px 1fr}}
+nav.toc{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px 14px;align-self:start}
+@media(min-width:980px){nav.toc{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+nav.toc h2{font-family:Montserrat,system-ui,sans-serif;font-size:.85rem;color:var(--mut);margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em}
+nav.toc ol{list-style:none;margin:0;padding:0}nav.toc li{margin:2px 0}
+nav.toc a{display:flex;gap:8px;align-items:flex-start;text-decoration:none;color:var(--tx);padding:5px 8px;border-radius:6px;font-size:.9rem}
+nav.toc a:hover,nav.toc a.ativo{background:var(--soft);color:var(--azul)}
+nav.toc .ck{flex:0 0 auto;width:1.1em;color:var(--ok);font-weight:700}
+.campos{background:var(--card);border:2px solid var(--laranja);border-radius:10px;padding:14px 16px;margin-bottom:18px}
+.campos h2{margin:0 0 6px;font-size:1rem}
+.campos p{margin:0 0 10px;color:var(--mut);font-size:.9rem}
+.campos .grid{display:flex;flex-wrap:wrap;gap:12px}
+.campos label{display:flex;flex-direction:column;font-size:.85rem;font-weight:600;gap:4px}
+.campos input{font:inherit;padding:8px 10px;border:1px solid var(--ln);border-radius:6px;background:var(--bg);color:var(--tx);min-width:180px}
+main{min-width:0}
+.wrap>div,.wrap>nav{min-width:0}
+main section.etapa{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px 16px;margin-bottom:18px}
+main section.etapa.feita{border-color:var(--ok)}
+main h2{font-family:Montserrat,system-ui,sans-serif;color:var(--azul);font-size:1.2rem;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+main h3{font-family:Montserrat,system-ui,sans-serif;font-size:1.02rem;margin-top:22px}
+.feito{font-family:"Open Sans",system-ui,sans-serif;font-size:.82rem;font-weight:600;color:var(--tx);display:inline-flex;gap:6px;align-items:center;border:1px solid var(--ln);border-radius:99px;padding:4px 12px;cursor:pointer;user-select:none}
+.feito input{width:16px;height:16px;accent-color:var(--ok)}
+section.feita .feito{background:var(--ok);color:#fff;border-color:var(--ok)}
+pre{position:relative;background:var(--code);color:var(--codetx);border-radius:8px;padding:38px 16px 14px;overflow-x:auto;font-size:.86rem;line-height:1.45}
+pre code{background:none;color:inherit;padding:0}
+code{font-family:ui-monospace,"Cascadia Code",Consolas,monospace;background:var(--soft);padding:1px 5px;border-radius:4px;font-size:.9em}
+.copiar{position:absolute;top:8px;right:8px;font:inherit;font-size:.75rem;padding:3px 10px;border-radius:6px;border:1px solid #3a4756;background:#1d2733;color:#e6edf3;cursor:pointer}
+.copiar:hover{background:#2b3846}
+.tab{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--ln);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-family:Montserrat,system-ui,sans-serif;font-size:.82rem}
+blockquote{margin:12px 0;padding:10px 14px;border-left:4px solid var(--laranja);background:var(--soft);border-radius:0 8px 8px 0}
+blockquote p{margin:0}
+hr{display:none}
+mark{background:#ffd9a3;color:#1d2733;border-radius:3px;padding:0 2px}
+.intro{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:4px 20px;margin-bottom:18px}
+footer{max-width:1180px;margin:0 auto;padding:8px 16px 28px;color:var(--mut);font-size:.82rem}
+@media print{nav.toc,.campos,.copiar,.feito{display:none}.wrap{display:block}body{background:#fff}}
+</style></head><body>
+<header class="top"><div class="in">
+<a href="../index.html">&larr; Todas as aulas — UC4 — Administrar e implantar servidores de banco de dados</a>
+<h1>Guia da Aula 07: três procedures para a TechStore (27/10/2026)</h1>
+<div class="meta">UC4 — Administrar e implantar servidores de banco de dados · 27/10/2026</div>
+<div class="prog" aria-hidden="true"><span></span></div><div class="progtx" aria-live="polite"></div>
+</div></header>
+<div class="wrap">
+<nav class="toc" aria-label="Etapas da aula"><h2>Etapas</h2><ol><li><a href="#e-para-que-serve-esta-aula"><span class="ck"></span><span>Para que serve esta aula</span></a></li><li><a href="#e-o-que-vamos-observar-no-seu-trabalho"><span class="ck"></span><span>O que vamos observar no seu trabalho</span></a></li><li><a href="#e-ponto-de-partida"><span class="ck"></span><span>Ponto de partida</span></a></li><li><a href="#e-antes-de-começar"><span class="ck"></span><span>Antes de começar</span></a></li><li><a href="#e-1-procedure-básica-listar-produtos-por-categoria-3"><span class="ck"></span><span>1. Procedure básica: listar produtos por categoria (30 min)</span></a></li><li><a href="#e-2-procedure-intermediária-mudar-status-do-pedido-4"><span class="ck"></span><span>2. Procedure intermediária: mudar status do pedido (40 min)</span></a></li><li><a href="#e-3-procedure-avançada-registrar-pedido-60-min"><span class="ck"></span><span>3. Procedure avançada: registrar pedido (60 min)</span></a></li><li><a href="#e-entrega-esperada"><span class="ck"></span><span>Entrega esperada</span></a></li><li><a href="#e-checkpoint-de-saída"><span class="ck"></span><span>Checkpoint de saída</span></a></li><li><a href="#e-reflexão"><span class="ck"></span><span>Reflexão</span></a></li></ol></nav>
+<div>
+
+<main><div class="intro"><p>Na Aula 06, você pesquisou como as procedures são usadas e apresentou uma atividade. Hoje vamos transformar três necessidades da TechStore em rotinas de banco de dados. Cada uma acrescenta uma responsabilidade nova.</p></div>
+<section class="etapa" id="e-para-que-serve-esta-aula"><h2><span>Para que serve esta aula</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Você vai construir e testar procedures que consultam dados, validam uma mudança de status e registram um pedido com controle de estoque.</p>
+<p>Esta UC não tem Projeto Integrador. O script que você construir passa a compor o Pacote de Rotinas da TechStore.</p>
+</section>
+<section class="etapa" id="e-o-que-vamos-observar-no-seu-trabalho"><h2><span>O que vamos observar no seu trabalho</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ul>
+<li>Se os parâmetros representam os dados que a aplicação precisa enviar ou receber.</li>
+<li>Se a consulta ou alteração segue o pedido da TechStore.</li>
+<li>Se a procedure recusa entradas que quebrariam a regra do exercício.</li>
+<li>Se você consegue explicar o que foi lido, gravado e confirmado.</li>
+</ul>
+</section>
+<section class="etapa" id="e-ponto-de-partida"><h2><span>Ponto de partida</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Escolha uma atividade apresentada na aula anterior. Que dados a pessoa usuária informaria? A rotina devolveria uma lista, uma mensagem ou um número de pedido?</p>
+</section>
+<section class="etapa" id="e-antes-de-começar"><h2><span>Antes de começar</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Entre no MySQL usado na aula e selecione a base:</p>
+<pre><code class="language-sql">USE loja_teste;
+SHOW FUNCTION STATUS WHERE Db = 'loja_teste';
+</code></pre>
+<p>Confira se aparecem <code>fn_frete</code> e <code>fn_total_pedido</code>. A terceira procedure usa as duas. Se alguma não aparecer, chame o docente antes de seguir.</p>
+<p>O esquema da TechStore usa <code>pedidos.data_pedido</code> e <code>itens_pedido.preco_unitario</code>. Confira esses nomes antes de escrever os <code>INSERTs</code>.</p>
+<p>O script de prática está em <code>Aula07_procedures_techstore.sql</code>. Complete os trechos <code>TODO</code> junto com este guia.</p>
+<p>Execute cada seção depois de completar os trechos dela. A chamada feliz da terceira procedure altera o estoque e cria um pedido; rode essa chamada uma vez no banco de laboratório.</p>
+</section>
+<section class="etapa" id="e-1-procedure-básica-listar-produtos-por-categoria-3"><h2><span>1. Procedure básica: listar produtos por categoria (30 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>A primeira demanda é uma consulta. A aplicação envia uma categoria e a procedure devolve os produtos encontrados.</p>
+<pre><code class="language-sql">CALL sp_listar_produtos_categoria('Eletrônicos');
+</code></pre>
+<p>Construa a rotina em quatro passos:</p>
+<ol>
+<li>Defina a assinatura: <code>sp_listar_produtos_categoria</code> recebe <code>p_categoria VARCHAR(50)</code> como <code>IN</code>.</li>
+<li>Dentro de <code>BEGIN ... END</code>, faça um <code>SELECT</code> de <code>id</code>, <code>nome</code>, <code>categoria</code>, <code>preco</code> e <code>estoque</code> da tabela <code>produtos</code>.</li>
+<li>Filtre com <code>WHERE categoria = p_categoria</code> e ordene pelo nome.</li>
+<li>Crie a procedure com <code>DELIMITER $$</code> e chame com <code>CALL</code>.</li>
+</ol>
+<p>Teste com <code>Eletrônicos</code>, <code>Alimentos</code> e uma categoria que não exista. O terceiro teste deve retornar zero linhas sem gerar erro.</p>
+<p><strong>Pense:</strong> essa procedure muda algum dado? O que ela devolve para a aplicação?</p>
+</section>
+<section class="etapa" id="e-2-procedure-intermediária-mudar-status-do-pedido-4"><h2><span>2. Procedure intermediária: mudar status do pedido (40 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>A equipe precisa impedir mudanças incoerentes no status. Para este exercício, use esta regra didática:</p>
+<div class="tab"><table>
+<thead>
+<tr>
+<th>Status atual</th>
+<th>Próximos status permitidos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Pendente</code></td>
+<td><code>Processando</code> ou <code>Cancelado</code></td>
+</tr>
+<tr>
+<td><code>Processando</code></td>
+<td><code>Entregue</code> ou <code>Cancelado</code></td>
+</tr>
+<tr>
+<td><code>Entregue</code></td>
+<td>nenhum</td>
+</tr>
+<tr>
+<td><code>Cancelado</code></td>
+<td>nenhum</td>
+</tr>
+</tbody>
+</table></div>
+<p>Esta regra foi criada para praticar condições e validações. Uma aplicação real precisa confirmar as transições com a área de negócio.</p>
+<p>Construa <code>sp_atualizar_status_pedido(IN p_pedido_id INT, IN p_novo_status VARCHAR(20))</code>:</p>
+<ol>
+<li>Declare uma variável para o status atual, uma para a mensagem e uma variável de controle iniciada em zero.</li>
+<li>Busque o status em <code>pedidos</code> pelo id recebido.</li>
+<li>Se o pedido não existir ou o novo status for <code>NULL</code>, use <code>SIGNAL SQLSTATE '45000'</code> com uma mensagem clara.</li>
+<li>Use <code>IF</code> e <code>ELSEIF</code> para marcar as transições permitidas.</li>
+<li>Se a transição não for permitida, monte a mensagem e use <code>SIGNAL</code>.</li>
+<li>Só então atualize <code>pedidos.status</code> e mostre o resultado.</li>
+</ol>
+<p>Para testar sem deixar a base alterada, confira que há um pedido <code>Processando</code> e rode:</p>
+<pre><code class="language-sql">SET @pedido_teste = (
+    SELECT id FROM pedidos
+    WHERE status = 'Processando'
+    ORDER BY id LIMIT 1
+);
+SELECT @pedido_teste;
+START TRANSACTION;
+CALL sp_atualizar_status_pedido(@pedido_teste, 'Entregue');
+SELECT id, status FROM pedidos WHERE id = @pedido_teste;
+ROLLBACK;
+</code></pre>
+<p>Se a variável aparecer como <code>NULL</code>, escolha um id retornado por <code>SELECT id, status FROM pedidos</code> e use um pedido que esteja <code>Processando</code>. Depois, teste um pedido inexistente e uma transição recusada. As chamadas inválidas devem mostrar erro e não devem executar o <code>UPDATE</code>.</p>
+</section>
+<section class="etapa" id="e-3-procedure-avançada-registrar-pedido-60-min"><h2><span>3. Procedure avançada: registrar pedido (60 min)</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Agora vamos construir <code>sp_registrar_pedido</code>, o exemplo do slide 11 da apresentação. Trabalhe em blocos. Compile e leia cada mensagem do MySQL antes de continuar.</p>
+<h3>Bloco A: contrato, variáveis e handler</h3>
+<ol>
+<li>Receba cliente, produto e quantidade com parâmetros <code>IN</code>.</li>
+<li>Devolva o id do pedido e o frete com parâmetros <code>OUT</code>.</li>
+<li>Declare as variáveis locais antes de qualquer comando executável.</li>
+<li>Crie um <code>EXIT HANDLER FOR SQLEXCEPTION</code> que faça <code>ROLLBACK</code> e <code>RESIGNAL</code>.</li>
+<li>Inicie a transação.</li>
+</ol>
+<h3>Bloco B: validar os dados</h3>
+<ol>
+<li>Se a quantidade for <code>NULL</code> ou menor que 1, devolva a mensagem <code>Quantidade deve ser maior que zero</code>.</li>
+<li>Busque o estado do cliente. Se não houver cliente, devolva <code>Cliente não encontrado</code>.</li>
+<li>Busque o preço e o estoque do produto com <code>SELECT ... FOR UPDATE</code>.</li>
+<li>Se o produto não existir, devolva <code>Produto não encontrado</code>.</li>
+<li>Se o estoque for menor que a quantidade, informe quantas unidades restam.</li>
+</ol>
+<h3>Bloco C: gravar e confirmar</h3>
+<ol>
+<li>Insira em <code>pedidos</code> com <code>cliente_id</code>, <code>data_pedido</code> e status <code>Processando</code>. Use <code>NOW()</code> para a data.</li>
+<li>Guarde <code>LAST_INSERT_ID()</code> em <code>p_pedido_id</code>.</li>
+<li>Insira o item usando <code>preco_unitario</code> e o preço lido do produto.</li>
+<li>Diminua o estoque.</li>
+<li>Calcule o total com <code>fn_total_pedido</code> e o frete com <code>fn_frete</code>.</li>
+<li>Termine com <code>COMMIT</code>.</li>
+</ol>
+<h3>Chamada feliz</h3>
+<p>Rode uma vez no banco de laboratório:</p>
+<pre><code class="language-sql">CALL sp_registrar_pedido(1, 2, 2, @pedido, @frete);
+SELECT @pedido AS pedido, @frete AS frete;
+SELECT id, estoque FROM produtos WHERE id = 2;
+SELECT * FROM itens_pedido WHERE pedido_id = @pedido;
+</code></pre>
+<p>Na carga inicial, o cliente 1 é de SP, o produto 2 custa R$ 80 e começa com 30 unidades. A chamada cria um pedido, devolve frete de R$ 15 e reduz o estoque em duas unidades. Ela altera a base de laboratório. Não a execute em uma base de produção nem repita sem restaurar os dados.</p>
+<h3>Chamadas que devem ser recusadas</h3>
+<p>Rode uma chamada por vez e anote a mensagem. Antes e depois dos testes, confira a quantidade de pedidos e o estoque dos produtos 2 e 10. Os valores devem permanecer iguais.</p>
+<pre><code class="language-sql">SELECT COUNT(*) AS total_pedidos FROM pedidos;
+SELECT id, estoque FROM produtos WHERE id IN (2, 10);
+SET @p = NULL; SET @f = NULL;
+CALL sp_registrar_pedido(1, 2, 0, @p, @f);      -- quantidade inválida
+SET @p = NULL; SET @f = NULL;
+CALL sp_registrar_pedido(999, 2, 1, @p, @f);    -- cliente inexistente
+SET @p = NULL; SET @f = NULL;
+CALL sp_registrar_pedido(1, 999, 1, @p, @f);    -- produto inexistente
+SET @p = NULL; SET @f = NULL;
+CALL sp_registrar_pedido(1, 10, 99, @p, @f);    -- estoque insuficiente
+SELECT COUNT(*) AS total_pedidos FROM pedidos;
+SELECT id, estoque FROM produtos WHERE id IN (2, 10);
+</code></pre>
+</section>
+<section class="etapa" id="e-entrega-esperada"><h2><span>Entrega esperada</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ul>
+<li>As três procedures no script <code>Aula07_procedures_techstore.sql</code>.</li>
+<li>Chamadas de teste para cada uma.</li>
+<li>Uma nota curta explicando onde aparecem o <code>SIGNAL</code>, o <code>FOR UPDATE</code>, o <code>ROLLBACK</code> e o <code>COMMIT</code>.</li>
+</ul>
+</section>
+<section class="etapa" id="e-checkpoint-de-saída"><h2><span>Checkpoint de saída</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<ol>
+<li>Qual procedure apenas consulta dados?</li>
+<li>Qual valida uma regra antes de alterar o pedido?</li>
+<li>Em que ponto a gravação do novo pedido fica definitiva?</li>
+</ol>
+</section>
+<section class="etapa" id="e-reflexão"><h2><span>Reflexão</span><label class="feito"><input type="checkbox" aria-label="Marcar etapa como concluída"> Concluí</label></h2>
+<p>Qual trecho protege melhor a integridade dos dados da TechStore? Como a dupla dividiu o trabalho e explicou suas decisões?</p></section></main>
+</div></div>
+<footer>Material da UC para estudantes. Marque as etapas conforme avança; o progresso fica salvo neste navegador.</footer>
+<script type="application/json" id="campos-def">[]</script>
+<script>
+(function(){
+  var CHAVE='educagente:'+location.pathname;
+  var campos=JSON.parse(document.getElementById('campos-def').textContent||'[]');
+  var main=document.querySelector('main');
+  var modelo=main.innerHTML;
+  function ler(k,d){try{var v=localStorage.getItem(CHAVE+':'+k);return v===null?d:JSON.parse(v);}catch(e){return d;}}
+  function gravar(k,v){try{localStorage.setItem(CHAVE+':'+k,JSON.stringify(v));}catch(e){}}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function reRegex(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+  function personalizar(){
+    var valores=ler('campos',{});var out=modelo;
+    campos.forEach(function(c){
+      var v=(valores[c.chave]||'').trim(); if(!v) return;
+      var re=new RegExp(reRegex(c.chave),'g');
+      out=out.replace(/(<code[^>]*>)([\s\S]*?)(<\/code>)|(<td[^>]*>)([\s\S]*?)(<\/td>)/g,function(m,a1,b1,c1,a2,b2,c2){
+        if(a1) return a1+b1.replace(re,'<mark>'+esc(v)+'</mark>')+c1;
+        return a2+b2.replace(re,'<mark>'+esc(v)+'</mark>')+c2;});
+    });
+    main.innerHTML=out; montar();
+  }
+  function montar(){
+    main.querySelectorAll('pre').forEach(function(pre){
+      var b=document.createElement('button');b.className='copiar';b.type='button';b.textContent='Copiar';
+      b.addEventListener('click',function(){
+        var t=pre.querySelector('code').innerText;
+        var ok=function(){b.textContent='Copiado!';setTimeout(function(){b.textContent='Copiar';},1500);};
+        if(navigator.clipboard){navigator.clipboard.writeText(t).then(ok,function(){});}
+        else{var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok();}catch(e){}document.body.removeChild(ta);}
+      });
+      pre.appendChild(b);
+    });
+    var feitos=ler('feitos',{});
+    main.querySelectorAll('section.etapa').forEach(function(s){
+      var cb=s.querySelector('.feito input'); if(!cb) return;
+      cb.checked=!!feitos[s.id]; s.classList.toggle('feita',cb.checked);
+      cb.addEventListener('change',function(){var f=ler('feitos',{});f[s.id]=cb.checked;gravar('feitos',f);s.classList.toggle('feita',cb.checked);progresso();});
+    });
+    progresso();
+  }
+  function progresso(){
+    var secs=main.querySelectorAll('section.etapa'),n=0;
+    var feitos=ler('feitos',{});
+    secs.forEach(function(s){if(feitos[s.id])n++;var a=document.querySelector('nav.toc a[href="#'+s.id+'"] .ck');if(a)a.textContent=feitos[s.id]?'✓':'';});
+    var p=secs.length?Math.round(100*n/secs.length):0;
+    document.querySelector('.prog span').style.width=p+'%';
+    document.querySelector('.progtx').textContent=n+' de '+secs.length+' etapas concluídas ('+p+'%)';
+    gravar('progresso',p);
+  }
+  var form=document.getElementById('campos-form');
+  if(form){
+    var valores=ler('campos',{});
+    form.querySelectorAll('input').forEach(function(inp){
+      inp.value=valores[inp.name]||'';
+      inp.addEventListener('input',function(){var v=ler('campos',{});v[inp.name]=inp.value;gravar('campos',v);personalizar();});
+    });
+  }
+  personalizar();
+  if('IntersectionObserver' in window){
+    var links={};document.querySelectorAll('nav.toc a').forEach(function(a){links[a.getAttribute('href').slice(1)]=a;});
+    var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){Object.keys(links).forEach(function(k){links[k].classList.remove('ativo');});var l=links[e.target.id];if(l)l.classList.add('ativo');}});},{rootMargin:'-20% 0px -70% 0px'});
+    document.querySelectorAll('main section.etapa').forEach(function(s){obs.observe(s);});
+  }
+})();
+</script>
+</body></html>
