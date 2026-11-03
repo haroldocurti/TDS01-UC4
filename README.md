@@ -40,4 +40,5 @@ Para baixar tudo: `git clone https://github.com/haroldocurti/TDS01-UC4.git`
 | 05 | 20/10/2026 | A equipe de banco atende a TechStore — lista de funções | [abrir](aulas/aula05.html) |
 | 06 | 26/10/2026 | A TechStore registra pedidos com segurança — procedures e transações | [abrir](aulas/aula06.html) |
 | 07 | 27/10/2026 | três procedures para a TechStore | [abrir](aulas/aula07.html) |
+| 08 | 03/11/2026 | quem pode fazer o quê no banco da TechStore | [abrir](aulas/aula08.html) |
 <!-- aulas:fim -->
