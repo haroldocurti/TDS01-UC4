@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aula 13: backup na prática (apresentação)</title>
+<meta name="description" content="Passo a passo da parte prática da Aula 13 da UC4: backup lógico, teste de restauração, log binário, erro simulado, recuperação até um ponto no tempo e script com agendamento.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --azul:#004A8D;--laranja:#F7941D;
+  --bg:#f4f7fb;--card:#ffffff;--tx:#1d2733;--mut:#4f5b69;--ln:#d5dde7;--soft:#e8f0fa;
+  --titulo:#004A8D;--link:#004A8D;
+  --code:#0f1720;--codetx:#e6edf3;
+  --ok-bg:#e7f5ee;--ok-ln:#1e7d4f;--ok-tx:#14532d;
+  --at-bg:#fff4e5;--at-ln:#F7941D;--at-tx:#5c3200;
+  --pe-bg:#fdecec;--pe-ln:#b42318;--pe-tx:#7a1a12;
+  --tag-bg:#F7941D;--tag-tx:#1d2733;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0f141b;--card:#171f29;--tx:#e6ebf1;--mut:#a7b3c0;--ln:#2c3846;--soft:#1c3149;
+    --titulo:#8cbcf0;--link:#8cbcf0;
+    --code:#0a0f15;--codetx:#e6edf3;
+    --ok-bg:#12291f;--ok-ln:#4fbf86;--ok-tx:#b9ecd0;
+    --at-bg:#2e2212;--at-ln:#F7941D;--at-tx:#ffd9a8;
+    --pe-bg:#331616;--pe-ln:#f07a6e;--pe-tx:#ffc9c2;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:"Open Sans",system-ui,"Segoe UI",Arial,sans-serif;font-size:17px;line-height:1.6;overflow-x:hidden}
+a{color:var(--link)}
+h1,h2,h3{font-family:Montserrat,system-ui,Arial,sans-serif;line-height:1.25}
+code{font-family:ui-monospace,"Cascadia Code",Consolas,"Liberation Mono",monospace;font-size:.9em;background:var(--soft);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.pular{position:absolute;left:-9999px;top:0;background:#fff;color:#004A8D;padding:8px 12px;z-index:50}
+.pular:focus{left:16px;top:8px}
+
+/* topo */
+.topo{position:sticky;top:0;z-index:20;background:#004A8D;color:#fff;border-bottom:4px solid var(--laranja)}
+.topo .in{max-width:1000px;margin:0 auto;padding:10px 16px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}
+.topo .marca{font-family:Montserrat,system-ui,Arial,sans-serif;font-weight:700;font-size:.95rem;flex:1 1 auto;min-width:0}
+.topo .marca small{display:block;font-family:"Open Sans",system-ui,Arial,sans-serif;font-weight:400;font-size:.78rem;opacity:.92}
+.topo .contador{font-size:.88rem;white-space:nowrap}
+.topo .socorro{font:inherit;font-size:.85rem;font-weight:600;background:#fff;color:#004A8D;border:0;border-radius:99px;padding:5px 12px;cursor:pointer;text-decoration:none}
+.topo .socorro:hover,.topo .socorro:focus-visible{background:#ffe2bd;color:#1d2733}
+.barra{height:6px;background:rgba(255,255,255,.25)}
+.barra span{display:block;height:100%;width:0;background:var(--laranja);transition:width .25s}
+
+/* slides */
+main{max-width:1000px;margin:0 auto;padding:20px 16px 110px}
+.slide{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:20px 24px 24px;min-width:0}
+.slide[hidden]{display:none}
+.slide h2{color:var(--titulo);font-size:1.55rem;margin:10px 0 12px;outline:none}
+.slide h3{font-size:1.02rem;margin:18px 0 6px}
+.slide p{margin:8px 0}
+.slide ul,.slide ol{padding-left:1.3em;margin:8px 0}
+.slide li{margin:4px 0}
+.etapa{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0}
+.tag{display:inline-block;background:var(--tag-bg);color:var(--tag-tx);font-weight:700;font-size:.82rem;padding:3px 10px;border-radius:99px;font-family:Montserrat,system-ui,Arial,sans-serif}
+.tempo{display:inline-block;border:1px solid var(--ln);color:var(--tx);font-size:.82rem;padding:2px 10px;border-radius:99px}
+.faz{font-size:1.05rem}
+.faz strong,.ver strong.rot{color:var(--titulo)}
+
+/* blocos de comando */
+.bloco{position:relative;margin:12px 0;min-width:0}
+.bloco pre{margin:0;background:var(--code);color:var(--codetx);border:1px solid #2c3846;border-radius:10px;padding:42px 16px 14px;overflow-x:auto;font-size:.86rem;line-height:1.5;max-width:100%}
+.bloco pre:focus-visible{outline:3px solid var(--laranja);outline-offset:2px}
+.bloco pre code{background:none;padding:0;color:inherit;font-size:inherit;overflow-wrap:normal;white-space:pre}
+.bloco .rotulo{position:absolute;top:10px;left:14px;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:#b8c4d1;font-weight:600}
+.copiar{position:absolute;top:7px;right:8px;font:inherit;font-size:.8rem;font-weight:600;padding:4px 12px;border-radius:6px;border:1px solid #F7941D;background:#1d2733;color:#fff;cursor:pointer}
+.copiar:hover,.copiar:focus-visible{background:#F7941D;color:#1d2733}
+
+/* caixas */
+.ver,.alerta,.perigo,.nota{border-radius:10px;padding:10px 14px;margin:14px 0;border-left:6px solid}
+.ver{background:var(--ok-bg);border-color:var(--ok-ln)}
+.ver .rot{display:block;font-family:Montserrat,system-ui,Arial,sans-serif;font-size:.9rem;color:var(--ok-tx);margin-bottom:2px}
+.alerta{background:var(--at-bg);border-color:var(--at-ln)}
+.alerta .rot{display:block;font-family:Montserrat,system-ui,Arial,sans-serif;font-size:.9rem;color:var(--at-tx);margin-bottom:2px}
+.perigo{background:var(--pe-bg);border-color:var(--pe-ln)}
+.perigo .rot{display:block;font-family:Montserrat,system-ui,Arial,sans-serif;font-size:.9rem;color:var(--pe-tx);margin-bottom:2px}
+.nota{background:var(--soft);border-color:var(--titulo)}
+.nota .rot{display:block;font-family:Montserrat,system-ui,Arial,sans-serif;font-size:.9rem;color:var(--titulo);margin-bottom:2px}
+.ver p,.alerta p,.perigo p,.nota p{margin:4px 0}
+.ver ul,.alerta ul,.perigo ul,.nota ul{margin:4px 0}
+
+/* tabelas */
+.tab{overflow-x:auto;margin:12px 0;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{border:1px solid var(--ln);padding:8px 10px;text-align:left;vertical-align:top}
+.opcoes td:first-child code{white-space:nowrap;overflow-wrap:normal}
+th{background:var(--soft);font-family:Montserrat,system-ui,Arial,sans-serif;font-size:.85rem}
+
+/* capa */
+.capa h1{font-size:2rem;color:var(--titulo);margin:10px 0 6px}
+.capa .sub{font-size:1.1rem;color:var(--mut);margin:0 0 16px}
+.roteiro{list-style:none;padding:0;margin:12px 0;display:grid;gap:6px}
+.roteiro li{display:flex;justify-content:space-between;gap:12px;border:1px solid var(--ln);border-radius:8px;padding:8px 12px;margin:0}
+.roteiro li span:last-child{white-space:nowrap;font-weight:600}
+.teclas{font-size:.92rem;color:var(--mut)}
+kbd{font-family:ui-monospace,Consolas,monospace;border:1px solid var(--ln);border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:.85em;background:var(--card);color:var(--tx)}
+
+/* checklist */
+.checklist{list-style:none;padding:0}
+.checklist li{margin:8px 0}
+.checklist label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.checklist input{width:20px;height:20px;margin-top:3px;flex:0 0 auto;accent-color:#004A8D}
+
+/* navegação inferior */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-top:1px solid var(--ln);box-shadow:0 -2px 10px rgba(0,0,0,.08)}
+.nav .in{max-width:1000px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center}
+.nav button{font:inherit;font-weight:700;font-size:.95rem;padding:9px 16px;border-radius:8px;cursor:pointer;border:2px solid #004A8D;white-space:nowrap}
+.nav .ant{background:var(--card);color:var(--titulo);border-color:var(--titulo)}
+.nav .prox{background:#004A8D;color:#fff}
+.nav button:hover{filter:brightness(1.1)}
+.nav button:disabled{opacity:.45;cursor:default;filter:none}
+.nav button:focus-visible,.nav select:focus-visible,.copiar:focus-visible,.socorro:focus-visible{outline:3px solid var(--laranja);outline-offset:2px}
+.nav label{position:absolute;left:-9999px}
+.nav select{flex:1 1 auto;min-width:0;font:inherit;font-size:.9rem;padding:8px 10px;border-radius:8px;border:1px solid var(--ln);background:var(--bg);color:var(--tx)}
+@media (max-width:560px){
+  body{font-size:16px}
+  .slide{padding:14px 14px 18px}
+  .slide h2{font-size:1.3rem}
+  .capa h1{font-size:1.55rem}
+  .nav button{padding:9px 12px}
+  .nav .txt{display:none}
+  .topo .marca small{display:none}
+}
+@media print{
+  .topo,.nav,.copiar{display:none}
+  .slide[hidden]{display:block}
+  .slide{break-after:page;border:0}
+  main{padding:0}
+}
+@media (prefers-reduced-motion:reduce){.barra span{transition:none}}
+</style>
+</head>
+<body>
+<a class="pular" href="#conteudo">Pular para o slide</a>
+<header class="topo">
+  <div class="in">
+    <div class="marca">Aula 13 · Backup na prática<small>UC4 · Técnico em Desenvolvimento de Sistemas · Senac São Paulo</small></div>
+    <a class="socorro" href="#s-socorro" data-ir="s-socorro">Se algo der errado</a>
+    <div class="contador" id="contador" aria-hidden="true">1 de 1</div>
+  </div>
+  <div class="barra" role="progressbar" aria-label="Progresso na apresentação" aria-valuemin="1" aria-valuemax="1" aria-valuenow="1" id="barra"><span></span></div>
+</header>
+
+<main id="conteudo">
+
+<!-- ===================== CAPA ===================== -->
+<section class="slide capa" id="s-capa" data-titulo="Capa: Aula 13">
+  <p class="etapa"><span class="tag">Aula 13 · 23/11/2026</span><span class="tempo">aula toda: práticas 1 a 5</span></p>
+  <h1 tabindex="-1">Backup na prática</h1>
+  <p class="sub">Backup lógico, teste de restauração, log binário, erro simulado, recuperação até um ponto no tempo e script com agendamento. Tudo no seu contêiner MySQL 8.4.</p>
+  <p>Na Aula 12 você desenhou a política de backup da TechStore. Hoje você vai executá-la: fazer o backup, provar que ele restaura, registrar a posição do log, provocar um erro no seu contêiner e recuperar a base até um instante antes dele.</p>
+  <ul class="roteiro" aria-label="Etapas e tempos previstos">
+    <li><span>Antes de começar</span><span>5 min</span></li>
+    <li><span>Retomada (em dupla)</span><span>25 min</span></li>
+    <li><span>Prática 1: backup</span><span>30 min</span></li>
+    <li><span>Prática 2: critério de aceite e teste de restauração</span><span>20 min</span></li>
+    <li><span>Prática 3: alterações e o marco B</span><span>20 min</span></li>
+    <li><span>Prática 4: erro, desastre e recuperação até o marco B</span><span>55 min</span></li>
+    <li><span>Prática 5: script e agendamento</span><span>15 min</span></li>
+    <li><span>Checkpoint de saída</span><span>10 min</span></li>
+  </ul>
+  <p class="teclas">Como navegar: use as setas <kbd>←</kbd> e <kbd>→</kbd> do teclado ou os botões Anterior e Próximo no rodapé. A lista do rodapé leva direto a qualquer slide. Cada bloco de comando tem um botão Copiar.</p>
+</section>
+
+<!-- ===================== OBJETIVO ===================== -->
+<section class="slide" id="s-objetivo" data-titulo="Para que serve esta aula">
+  <p class="etapa"><span class="tag">Abertura</span></p>
+  <h2 tabindex="-1">Para que serve esta aula</h2>
+  <p>Um backup só vale se você consegue restaurá-lo. A recuperação até um ponto no tempo mostra que você consegue voltar a um momento escolhido, e não apenas ao último backup.</p>
+  <p>Ao final, sua equipe terá um backup testado e uma sequência de comandos que outra pessoa consegue repetir.</p>
+  <h3>O que vamos observar no seu trabalho</h3>
+  <ul>
+    <li>Se o backup terminou por completo e se os marcos estão registrados em arquivo.</li>
+    <li>Se a restauração do backup dá as mesmas contagens da origem (<code>diff</code> sem diferenças).</li>
+    <li>Se a recuperação até o marco B devolve a base ao estado anterior ao erro (<code>RECUPERAÇÃO OK</code>).</li>
+  </ul>
+</section>
+
+<!-- ===================== CUIDADO ===================== -->
+<section class="slide" id="s-cuidado" data-titulo="Cuidado antes de começar">
+  <p class="etapa"><span class="tag">Abertura</span></p>
+  <h2 tabindex="-1">Cuidado antes de começar</h2>
+  <div class="perigo"><span class="rot">Atenção: comandos destrutivos</span>
+    <p>Os comandos destrutivos desta aula (<code>UPDATE</code> sem <code>WHERE</code> e <code>DROP DATABASE</code>) valem <strong>só para o seu contêiner <code>mysql-SEU_USUARIO</code></strong>. Confira o nome antes de colar qualquer comando.</p>
+  </div>
+  <div class="alerta"><span class="rot">Dados pessoais</span>
+    <p>Os backups contêm nome, e-mail e cidade de clientes. Por isso, as pastas da aula ficam fechadas para colegas (<code>chmod 700</code>), e o backup não sai da sua pasta sem necessidade.</p>
+  </div>
+  <p>Nos comandos, <code>$USER</code> é o seu usuário na VM, e <code>$SENHA</code> é a variável com a senha do root que você define no início. Nenhuma senha aparece escrita nos slides.</p>
+</section>
+
+<!-- ===================== TERMOS ===================== -->
+<section class="slide" id="s-termos" data-titulo="Termos que vamos usar">
+  <p class="etapa"><span class="tag">Abertura</span></p>
+  <h2 tabindex="-1">Termos que vamos usar</h2>
+  <ul>
+    <li><strong>Backup lógico:</strong> o arquivo <code>.sql</code> gerado pelo <code>mysqldump</code>, com os comandos que recriam a base.</li>
+    <li><strong>Log binário (binlog):</strong> o registro, em arquivos, de tudo o que foi alterado no banco. Cada evento tem uma <strong>posição</strong>, um número que identifica o ponto no arquivo.</li>
+    <li><strong>Marco A:</strong> o momento do backup. A posição dele está no cabeçalho do arquivo <code>.sql</code>.</li>
+    <li><strong>Marco B:</strong> o último instante antes do erro. Você registra a posição dele <strong>antes</strong> de errar.</li>
+    <li><strong>Recuperação até um ponto no tempo (PITR):</strong> restaurar o backup e aplicar o binlog do marco A até o marco B.</li>
+  </ul>
+  <div class="nota"><span class="rot">A linha do tempo de hoje, em texto</span>
+    <p>Backup (marco A) → alterações corretas → marco B → erro de propósito → base apagada → restaurar o backup → aplicar o binlog de A até B → base igual ao marco B, sem o erro.</p>
+  </div>
+</section>
+
+<!-- ===================== ANTES DE COMEÇAR 1-3 ===================== -->
+<section class="slide" id="s-antes1" data-titulo="Antes de começar: passos 1 a 3">
+  <p class="etapa"><span class="tag">Antes de começar — passos 1 a 3</span><span class="tempo">tempo previsto: 5 min</span></p>
+  <h2 tabindex="-1">Antes de começar: contêiner, senha e pastas</h2>
+  <p class="faz"><strong>Passo 1.</strong> Confira se o seu contêiner está no ar.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>docker ps --filter name=mysql-$USER</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Uma linha de cabeçalho e, abaixo, uma linha com o nome <code>mysql-SEU_USUARIO</code> e o status começando por <code>Up</code>. Se aparecer só o cabeçalho, o contêiner não está no ar: avise o docente.</p></div>
+  <p class="faz"><strong>Passo 2.</strong> Defina a senha do root, como na Aula 02. Ela não aparece na tela.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>read -s -p "Senha do root do MySQL: " SENHA; echo</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>O texto <code>Senha do root do MySQL:</code>. Digite a senha e tecle Enter. Nada do que você digita aparece, e o cursor só pula de linha.</p></div>
+  <p class="faz"><strong>Passo 3.</strong> Crie as pastas, fechadas para colegas.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>mkdir -p ~/backup_techstore ~/copia_externa
+chmod 700 ~/backup_techstore ~/copia_externa</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Nenhuma mensagem. O terminal volta ao prompt.</p></div>
+</section>
+
+<!-- ===================== ANTES DE COMEÇAR 4 ===================== -->
+<section class="slide" id="s-antes2" data-titulo="Antes de começar: passo 4, verificar o ambiente">
+  <p class="etapa"><span class="tag">Antes de começar — passo 4</span><span class="tempo">tempo previsto: 5 min</span></p>
+  <h2 tabindex="-1">Verifique o ambiente</h2>
+  <p class="faz"><strong>O que faz:</strong> pergunta ao MySQL a versão, o estado do log binário e quantas tabelas, rotinas e triggers a base <code>loja_teste</code> tem.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot -N -e "
+SELECT CONCAT('versao ........ ', VERSION());
+SELECT CONCAT('log_bin ....... ', IF(@@log_bin = 1, 'ON', 'OFF'));
+SELECT CONCAT('binlog_format . ', @@binlog_format);
+SELECT CONCAT('gtid_mode ..... ', @@gtid_mode);
+SELECT CONCAT('tabelas ....... ', COUNT(*)) FROM information_schema.tables WHERE table_schema = 'loja_teste';
+SELECT CONCAT('rotinas ....... ', COUNT(*)) FROM information_schema.routines WHERE routine_schema = 'loja_teste';
+SELECT CONCAT('triggers ...... ', COUNT(*)) FROM information_schema.triggers WHERE trigger_schema = 'loja_teste';"</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span>
+    <p>Sete linhas, uma por item. O esperado: versão <code>8.4.x</code>, <code>log_bin ON</code>, <code>binlog_format ROW</code>, <code>gtid_mode OFF</code>, pelo menos 4 tabelas e nenhum trigger.</p>
+    <p>Anote quantas rotinas você tem: elas precisam aparecer depois da restauração.</p>
+  </div>
+  <div class="alerta"><span class="rot">Se não for isso</span>
+    <ul>
+      <li><code>Access denied</code>: a variável <code>SENHA</code> está vazia ou errada. Rode o passo 2 de novo.</li>
+      <li><code>log_bin OFF</code>, <code>gtid_mode ON</code> ou algum trigger: chame o docente <strong>antes</strong> de seguir.</li>
+    </ul>
+  </div>
+  <div class="nota"><span class="rot">Saiu da VM ou a conexão caiu?</span>
+    <p>Entre de novo e rode, nesta ordem: o <code>read -s</code> do passo 2, o bloco da função <code>contar</code> (Prática 1, passo 1.1) e <code>source ~/backup_techstore/marcos.txt</code>. Tudo volta como estava.</p>
+  </div>
+</section>
+
+<!-- ===================== RETOMADA ===================== -->
+<section class="slide" id="s-retomada" data-titulo="Retomada da Aula 12 (em dupla)">
+  <p class="etapa"><span class="tag">Retomada — em dupla</span><span class="tempo">tempo previsto: 25 min</span></p>
+  <h2 tabindex="-1">Retomada da Aula 12</h2>
+  <p>Termine as seções 2 e 3 do <strong>Guia da Aula 12</strong>:</p>
+  <ul>
+    <li>a escolha da estratégia, com a justificativa em uma frase;</li>
+    <li>o checklist 3-2-1-1-0 da TechStore.</li>
+  </ul>
+  <p>O critério de aceite (seção 4 da Aula 12) você define na Prática 2.</p>
+  <div class="nota"><span class="rot">Sem comandos neste momento</span><p>Esta etapa é no caderno e no Guia da Aula 12. Os comandos voltam na Prática 1.</p></div>
+</section>
+
+<!-- ===================== PRÁTICA 1 ===================== -->
+<section class="slide" id="s-1-1a" data-titulo="Prática 1, passo 1.1: função contar">
+  <p class="etapa"><span class="tag">Prática 1 — passo 1.1</span><span class="tempo">tempo previsto da Prática 1: 30 min</span></p>
+  <h2 tabindex="-1">Função de contagem</h2>
+  <p class="faz"><strong>O que faz:</strong> cria o comando <code>contar</code>, que conta as linhas das quatro tabelas e os pedidos por status. Você vai usá-lo durante a aula toda.</p>
+  <p>Cole o bloco inteiro de uma vez.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>contar() {
+  docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot -N "${1:-loja_teste}" -e "
+SELECT 'clientes', COUNT(*) FROM clientes
+UNION ALL SELECT 'produtos', COUNT(*) FROM produtos
+UNION ALL SELECT 'pedidos', COUNT(*) FROM pedidos
+UNION ALL SELECT 'itens_pedido', COUNT(*) FROM itens_pedido;
+SELECT CONCAT('status ', status), COUNT(*) FROM pedidos GROUP BY status ORDER BY status;"
+}</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Nenhuma mensagem. A função fica guardada na sessão do terminal. Se você sair da VM, cole este bloco de novo.</p></div>
+  <p>Sem argumento, <code>contar</code> usa a base <code>loja_teste</code>. Com um nome depois dele (por exemplo, <code>contar loja_teste_restaurada</code>), conta outra base.</p>
+</section>
+
+<section class="slide" id="s-1-1b" data-titulo="Prática 1, passo 1.1: contagem A">
+  <p class="etapa"><span class="tag">Prática 1 — passo 1.1</span><span class="tempo">tempo previsto da Prática 1: 30 min</span></p>
+  <h2 tabindex="-1">Contagem A</h2>
+  <p class="faz"><strong>O que faz:</strong> mostra a contagem na tela e, ao mesmo tempo, guarda uma cópia no arquivo <code>contagem_A.txt</code>.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>contar | tee ~/backup_techstore/contagem_A.txt</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Uma linha por tabela (<code>clientes</code>, <code>produtos</code>, <code>pedidos</code>, <code>itens_pedido</code>), cada uma com um número. Depois, uma linha por status, no formato <code>status Pendente</code> seguido da quantidade.</p></div>
+  <p>Esta é a foto da base no marco A. Ela serve de referência para os testes seguintes.</p>
+</section>
+
+<section class="slide" id="s-1-2" data-titulo="Prática 1, passo 1.2: backup com mysqldump">
+  <p class="etapa"><span class="tag">Prática 1 — passo 1.2</span><span class="tempo">tempo previsto da Prática 1: 30 min</span></p>
+  <h2 tabindex="-1">Backup com <code>mysqldump</code></h2>
+  <p class="faz"><strong>O que faz:</strong> gera o backup lógico da <code>loja_teste</code> num arquivo <code>.sql</code> com data e hora no nome, guardado na variável <code>BKP</code>.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>BKP=~/backup_techstore/loja_teste_$(date +%F_%H%M).sql
+docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysqldump -uroot \
+  --single-transaction --routines --triggers --events --source-data=2 \
+  loja_teste &gt; "$BKP"</code></pre></div>
+  <div class="tab opcoes"><table><thead><tr><th scope="col">Opção</th><th scope="col">O que faz</th></tr></thead><tbody>
+<tr><td><code>--single-transaction</code></td><td>Lê as tabelas InnoDB numa transação, como uma foto do banco, sem bloquear quem está usando a loja.</td></tr>
+<tr><td><code>--routines</code></td><td>Inclui as funções e procedures (<code>fn_*</code>, <code>sp_*</code>). Sem esta opção, elas ficam de fora.</td></tr>
+<tr><td><code>--triggers</code> e <code>--events</code></td><td>Incluem triggers e eventos agendados, se houver.</td></tr>
+<tr><td><code>--source-data=2</code></td><td>Escreve no arquivo, como comentário, o nome e a posição do log binário no momento do backup (o marco A).</td></tr>
+</tbody></table></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Nenhuma mensagem. O prompt volta depois de alguns segundos. A conferência do arquivo vem no próximo passo.</p></div>
+  <div class="alerta"><span class="rot">Faça o backup uma vez só</span><p>Se precisar refazer, comece de novo por este passo. O <code>marcos.txt</code> é sobrescrito e os passos seguintes usam os novos valores.</p></div>
+</section>
+
+<section class="slide" id="s-1-3a" data-titulo="Prática 1, passo 1.3: conferir o arquivo">
+  <p class="etapa"><span class="tag">Prática 1 — passo 1.3</span><span class="tempo">tempo previsto da Prática 1: 30 min</span></p>
+  <h2 tabindex="-1">Conferir o arquivo e ler o marco A</h2>
+  <p class="faz"><strong>O que faz:</strong> mostra o tamanho do backup, a última linha dele e a linha do cabeçalho com a posição do log binário.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>ls -lh "$BKP"
+tail -n 1 "$BKP"
+grep -n "SOURCE_LOG" "$BKP"</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span>
+    <ul>
+      <li>O arquivo com algumas dezenas de KB.</li>
+      <li>A última linha: <code>-- Dump completed on ...</code></li>
+      <li>A linha do <code>grep</code>, parecida com esta: <code>-- CHANGE REPLICATION SOURCE TO SOURCE_LOG_FILE='binlog.000003', SOURCE_LOG_POS=1577;</code></li>
+    </ul>
+    <p>Os números do seu arquivo serão outros. Esse é o seu marco A.</p>
+  </div>
+</section>
+
+<section class="slide" id="s-1-3b" data-titulo="Prática 1, passo 1.3: gravar o marco A em marcos.txt">
+  <p class="etapa"><span class="tag">Prática 1 — passo 1.3</span><span class="tempo">tempo previsto da Prática 1: 30 min</span></p>
+  <h2 tabindex="-1">Guardar o marco A em <code>marcos.txt</code></h2>
+  <p class="faz"><strong>O que faz:</strong> lê do cabeçalho o arquivo de log (<code>ARQ_A</code>) e a posição (<code>POS_A</code>) e grava os dois, junto com <code>BKP</code>, num arquivo. Assim você não depende da memória do terminal.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>ARQ_A=$(grep -oP "SOURCE_LOG_FILE='\K[^']+" "$BKP")
+POS_A=$(grep -oP "SOURCE_LOG_POS=\K[0-9]+" "$BKP")
+printf 'BKP=%s\nARQ_A=%s\nPOS_A=%s\n' "$BKP" "$ARQ_A" "$POS_A" &gt; ~/backup_techstore/marcos.txt
+cat ~/backup_techstore/marcos.txt</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Três linhas: <code>BKP=</code> com o caminho do backup, <code>ARQ_A=</code> com um nome como <code>binlog.000003</code> e <code>POS_A=</code> com um número. Confira se os números batem com a linha que você leu no passo anterior.</p></div>
+  <div class="alerta"><span class="rot">Se algo ficou errado</span><p>Se o arquivo tiver 0 bytes, se a última linha não for <code>Dump completed</code> ou se <code>ARQ_A</code> ou <code>POS_A</code> ficarem vazios, apague o arquivo e refaça o 1.2:</p></div>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>rm "$BKP"</code></pre></div>
+</section>
+
+<section class="slide" id="s-1-4" data-titulo="Prática 1, passo 1.4: cópia conferida">
+  <p class="etapa"><span class="tag">Prática 1 — passo 1.4</span><span class="tempo">tempo previsto da Prática 1: 30 min</span></p>
+  <h2 tabindex="-1">Cópia conferida</h2>
+  <p class="faz"><strong>O que faz:</strong> simula a cópia fora do local e calcula o código de integridade (SHA-256) do original e da cópia.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>cp "$BKP" ~/copia_externa/
+sha256sum "$BKP" ~/copia_externa/$(basename "$BKP")</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Duas linhas, cada uma com um código longo seguido do caminho do arquivo. Os dois códigos devem ser iguais.</p></div>
+  <div class="nota"><span class="rot">Para o checklist 3-2-1-1-0</span><p>Em produção, essa cópia iria para outro servidor ou para a nuvem, com credencial separada. Aqui, a pasta <code>copia_externa</code> está no mesmo disco da VM: ela não protege contra a perda da VM. Anote isso.</p></div>
+  <div class="nota"><span class="rot">Para a Entrega 3</span><p>O <code>mysqldump</code> não copia os usuários do MySQL (criados na Aula 08), porque eles ficam no schema <code>mysql</code>. Confirme com o comando abaixo, que deve dar <code>0</code>. Anote.</p></div>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>grep -c "CREATE USER" "$BKP"</code></pre></div>
+</section>
+
+<!-- ===================== PRÁTICA 2 ===================== -->
+<section class="slide" id="s-2-1" data-titulo="Prática 2, passo 2.1: definir o critério">
+  <p class="etapa"><span class="tag">Prática 2 — passo 2.1</span><span class="tempo">tempo previsto da Prática 2: 20 min</span></p>
+  <h2 tabindex="-1">Definir o critério de aceite</h2>
+  <p>Esta prática faz o teste que a sua equipe definiu. O backup só conta como cópia válida depois de restaurar. Por isso, o teste acontece <strong>antes</strong> de qualquer alteração.</p>
+  <p class="faz"><strong>No caderno, escreva:</strong></p>
+  <ul>
+    <li>o número de linhas a comparar (a contagem A);</li>
+    <li>o RTO da equipe, em minutos, que vem do Guia da Aula 12.</li>
+  </ul>
+  <div class="nota"><span class="rot">Sem comandos neste passo</span><p>Você vai comparar o resultado dos próximos passos com o que escreveu aqui.</p></div>
+</section>
+
+<section class="slide" id="s-2-2" data-titulo="Prática 2, passo 2.2: restaurar e cronometrar">
+  <p class="etapa"><span class="tag">Prática 2 — passo 2.2</span><span class="tempo">tempo previsto da Prática 2: 20 min</span></p>
+  <h2 tabindex="-1">Restaurar numa base separada e cronometrar</h2>
+  <p class="faz"><strong>O que faz:</strong> cria a base vazia <code>loja_teste_restaurada</code> e carrega nela o seu backup, medindo o tempo com <code>time</code>. A <code>loja_teste</code> não é tocada.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot -e "
+DROP DATABASE IF EXISTS loja_teste_restaurada;
+CREATE DATABASE loja_teste_restaurada;"
+time docker exec -i -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot loja_teste_restaurada &lt; "$BKP"</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Ao final, três linhas de tempo: <code>real</code>, <code>user</code> e <code>sys</code>. Anote o tempo da linha <code>real</code>.</p></div>
+</section>
+
+<section class="slide" id="s-2-3" data-titulo="Prática 2, passo 2.3: comparar com o critério">
+  <p class="etapa"><span class="tag">Prática 2 — passo 2.3</span><span class="tempo">tempo previsto da Prática 2: 20 min</span></p>
+  <h2 tabindex="-1">Comparar com o critério</h2>
+  <p class="faz"><strong>O que faz:</strong> conta a base restaurada e compara com a contagem A. Se não houver diferença, imprime a mensagem de sucesso.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>contar loja_teste_restaurada &gt; ~/backup_techstore/contagem_restaurada.txt
+diff ~/backup_techstore/contagem_A.txt ~/backup_techstore/contagem_restaurada.txt &amp;&amp; echo "TESTE OK: o backup restaura igual ao marco A"</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Só a linha <code>TESTE OK: o backup restaura igual ao marco A</code>. Se aparecer <code>TESTE OK</code>, o backup passou.</p></div>
+  <div class="alerta"><span class="rot">Se o diff mostrar diferenças</span><p>O backup não é válido: volte ao 1.2 e chame o docente.</p></div>
+  <p>Anote no caderno: o tempo, se o <code>diff</code> passou e se o tempo fica abaixo do RTO da equipe.</p>
+</section>
+
+<section class="slide" id="s-2-4" data-titulo="Prática 2, passo 2.4: limpar">
+  <p class="etapa"><span class="tag">Prática 2 — passo 2.4</span><span class="tempo">tempo previsto da Prática 2: 20 min</span></p>
+  <h2 tabindex="-1">Limpar a base de teste</h2>
+  <p class="faz"><strong>O que faz:</strong> apaga só a base de teste <code>loja_teste_restaurada</code>.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot -e "DROP DATABASE loja_teste_restaurada;"</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Nenhuma mensagem. O terminal volta ao prompt.</p></div>
+  <div class="nota"><span class="rot">Por que este teste ainda não é o definitivo</span><p>Esta base fica no mesmo servidor, então não é um ambiente limpo de verdade. Na Aula 14, o teste será cronometrado e feito em um ambiente separado.</p></div>
+</section>
+
+<!-- ===================== PRÁTICA 3 ===================== -->
+<section class="slide" id="s-3-1" data-titulo="Prática 3, passo 3.1: alterações corretas">
+  <p class="etapa"><span class="tag">Prática 3 — passo 3.1</span><span class="tempo">tempo previsto da Prática 3: 20 min</span></p>
+  <h2 tabindex="-1">Alterações corretas, depois do marco A</h2>
+  <p class="faz"><strong>O que faz:</strong> um cliente novo faz um pedido, e o pedido passa para <code>Processando</code> (transição permitida pelas regras da Aula 07).</p>
+  <div class="alerta"><span class="rot">Rode uma única vez</span><p>Estas alterações vão parar no log binário e voltam na recuperação.</p></div>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot loja_teste -e "
+INSERT INTO clientes (nome, email, cidade, estado, data_cadastro)
+  VALUES ('Cliente Aula 13', 'aula13.$USER@exemplo.com', 'São Paulo', 'SP', CURDATE());
+INSERT INTO pedidos (cliente_id, data_pedido, status)
+  VALUES (LAST_INSERT_ID(), NOW(), 'Pendente');
+UPDATE pedidos SET status = 'Processando' WHERE id = LAST_INSERT_ID();"</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Nenhuma mensagem. O terminal volta ao prompt.</p></div>
+  <p>Se aparecer <code>Duplicate entry 'aula13...'</code>, o bloco já tinha rodado antes. Não rode de novo: siga em frente.</p>
+</section>
+
+<section class="slide" id="s-3-2" data-titulo="Prática 3, passo 3.2: contagem B">
+  <p class="etapa"><span class="tag">Prática 3 — passo 3.2</span><span class="tempo">tempo previsto da Prática 3: 20 min</span></p>
+  <h2 tabindex="-1">Contagem B e diferença para a A</h2>
+  <p class="faz"><strong>O que faz:</strong> guarda a contagem atual em <code>contagem_B.txt</code> e mostra o que mudou desde o marco A.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>contar | tee ~/backup_techstore/contagem_B.txt
+diff ~/backup_techstore/contagem_A.txt ~/backup_techstore/contagem_B.txt</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Primeiro a contagem B. Depois, o <code>diff</code> mostra <code>clientes</code> e <code>pedidos</code> com 1 a mais e a linha de <code>status Processando</code> alterada. As linhas com <code>&lt;</code> vêm da contagem A, e as linhas com <code>&gt;</code>, da contagem B.</p></div>
+  <p>Explique para a dupla de onde vem cada diferença.</p>
+</section>
+
+<section class="slide" id="s-3-3" data-titulo="Prática 3, passo 3.3: marco B">
+  <p class="etapa"><span class="tag">Prática 3 — passo 3.3</span><span class="tempo">tempo previsto da Prática 3: 20 min</span></p>
+  <h2 tabindex="-1">Marco B: o instante antes do erro</h2>
+  <p class="faz"><strong>O que faz:</strong> pergunta ao MySQL o arquivo e a posição atuais do log binário e acrescenta os dois (<code>ARQ_B</code> e <code>POS_B</code>) ao <code>marcos.txt</code>.</p>
+  <div class="alerta"><span class="rot">Registre agora</span><p>Rode este passo <strong>antes</strong> de qualquer erro.</p></div>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>read -r ARQ_B POS_B _ &lt; &lt;(docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot -N -e "SHOW BINARY LOG STATUS")
+printf 'ARQ_B=%s\nPOS_B=%s\n' "$ARQ_B" "$POS_B" &gt;&gt; ~/backup_techstore/marcos.txt
+cat ~/backup_techstore/marcos.txt</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>O <code>marcos.txt</code> agora com cinco linhas: <code>BKP</code>, <code>ARQ_A</code>, <code>POS_A</code>, <code>ARQ_B</code> e <code>POS_B</code>, todas preenchidas.</p></div>
+  <div class="nota"><span class="rot">MySQL 8.4</span><p>No MySQL 8.4 o comando é <code>SHOW BINARY LOG STATUS</code>. Tutoriais antigos usam <code>SHOW MASTER STATUS</code>, que não existe mais nessa versão.</p></div>
+</section>
+
+<section class="slide" id="s-3-4" data-titulo="Prática 3, passo 3.4: conferência da dupla">
+  <p class="etapa"><span class="tag">Prática 3 — passo 3.4</span><span class="tempo">tempo previsto da Prática 3: 20 min</span></p>
+  <h2 tabindex="-1">Conferência da dupla</h2>
+  <ol>
+    <li>Mostre à sua dupla o <code>marcos.txt</code> e o <code>contagem_B.txt</code>.</li>
+    <li>A dupla confere se o marco B veio <strong>depois</strong> das alterações da 3.1 e <strong>antes</strong> do erro, que ainda não aconteceu.</li>
+    <li>Depois, troquem os papéis.</li>
+  </ol>
+  <div class="nota"><span class="rot">Sem comandos novos</span><p>Para mostrar os arquivos, use <code>cat ~/backup_techstore/marcos.txt</code> e <code>cat ~/backup_techstore/contagem_B.txt</code>.</p></div>
+</section>
+
+<!-- ===================== PRÁTICA 4 ===================== -->
+<section class="slide" id="s-4-1" data-titulo="Prática 4, passo 4.1: pronto para o erro?">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.1</span><span class="tempo">tempo previsto da Prática 4: 55 min</span></p>
+  <h2 tabindex="-1">Pronto para o erro?</h2>
+  <p>Só siga quando todos os itens estiverem marcados. Mostre a tela à sua dupla.</p>
+  <ul class="checklist">
+    <li><label><input type="checkbox"> <span><code>tail -n 1 "$BKP"</code> mostra <code>-- Dump completed on ...</code>.</span></label></li>
+    <li><label><input type="checkbox"> <span>O teste da Prática 2 terminou com <code>TESTE OK</code>.</span></label></li>
+    <li><label><input type="checkbox"> <span><code>cat ~/backup_techstore/marcos.txt</code> mostra <code>BKP</code>, <code>ARQ_A</code>, <code>POS_A</code>, <code>ARQ_B</code> e <code>POS_B</code>, todos preenchidos.</span></label></li>
+    <li><label><input type="checkbox"> <span>O marco B foi registrado <strong>antes</strong> do erro.</span></label></li>
+  </ul>
+  <p>Comandos para conferir:</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>tail -n 1 "$BKP"</code></pre></div>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>cat ~/backup_techstore/marcos.txt</code></pre></div>
+  <p class="teclas">As marcações desta lista são só para você acompanhar. Elas não são salvas.</p>
+</section>
+
+<section class="slide" id="s-4-2" data-titulo="Prática 4, passo 4.2: o erro de propósito">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.2</span><span class="tempo">tempo previsto da Prática 4: 55 min</span></p>
+  <h2 tabindex="-1">O erro (de propósito)</h2>
+  <div class="perigo"><span class="rot">Atenção: comando destrutivo</span><p>Este <code>UPDATE</code> não tem <code>WHERE</code>. Ele muda o status de <strong>todos</strong> os pedidos. Rode uma única vez, só no seu contêiner <code>mysql-$USER</code>.</p></div>
+  <p class="faz"><strong>O que faz:</strong> marca todos os pedidos como <code>Cancelado</code> e, em seguida, mostra a contagem para você ver o estrago.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot loja_teste -e "
+UPDATE pedidos SET status = 'Cancelado';"
+contar</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>As quatro tabelas com os mesmos números da contagem B. Nas linhas de status, sobra uma só: <code>status Cancelado</code>, com o total de pedidos.</p></div>
+</section>
+
+<section class="slide" id="s-4-3" data-titulo="Prática 4, passo 4.3: demonstração do docente">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.3</span><span class="tempo">tempo previsto: 5 min</span></p>
+  <h2 tabindex="-1">Demonstração do docente</h2>
+  <p>Acompanhe a leitura do log binário a partir do marco A. O docente mostra:</p>
+  <ul>
+    <li>os eventos de inserção;</li>
+    <li>o <code>UPDATE</code> do pedido novo;</li>
+    <li>logo depois do marco B, o bloco do erro.</li>
+  </ul>
+  <div class="alerta"><span class="rot">Só leitura</span><p>Essa saída é só para leitura: ela não deve ser enviada ao <code>mysql</code>. Neste passo, você só acompanha.</p></div>
+</section>
+
+<section class="slide" id="s-4-4" data-titulo="Prática 4, passo 4.4: o desastre">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.4</span><span class="tempo">tempo previsto da Prática 4: 55 min</span></p>
+  <h2 tabindex="-1">O desastre</h2>
+  <div class="perigo"><span class="rot">Atenção: comando destrutivo</span><p>Este passo apaga a base <code>loja_teste</code>. Confira o nome do contêiner antes de colar.</p></div>
+  <p class="faz"><strong>O que faz:</strong> registra a hora de início da recuperação num arquivo e apaga a base.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>date +%T | tee ~/backup_techstore/inicio_recuperacao.txt
+docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot -e "DROP DATABASE loja_teste;"</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>A hora atual, no formato <code>HH:MM:SS</code>, gravada também em <code>inicio_recuperacao.txt</code>. O <code>DROP DATABASE</code> não mostra mensagem.</p></div>
+  <div class="nota"><span class="rot">Regra de ouro</span><p>Errou em qualquer passo da Prática 4? Volte a este passo. O backup e os marcos continuam valendo, e você pode refazer quantas vezes precisar.</p></div>
+</section>
+
+<section class="slide" id="s-4-5" data-titulo="Prática 4, passo 4.5: restaurar o backup do marco A">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.5</span><span class="tempo">tempo previsto da Prática 4: 55 min</span></p>
+  <h2 tabindex="-1">Restaurar o backup do marco A</h2>
+  <p class="faz"><strong>O que faz:</strong> recarrega os marcos, recria a base vazia, carrega o backup e compara a contagem com a contagem A.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>source ~/backup_techstore/marcos.txt
+docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot -e "CREATE DATABASE loja_teste;"
+docker exec -i -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot loja_teste &lt; "$BKP"
+contar &gt; ~/backup_techstore/contagem_restaurada_A.txt
+diff ~/backup_techstore/contagem_A.txt ~/backup_techstore/contagem_restaurada_A.txt &amp;&amp; echo "MARCO A OK"</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Só a linha <code>MARCO A OK</code>. A base voltou ao estado do backup: ainda sem o cliente novo e sem o erro.</p></div>
+</section>
+
+<section class="slide" id="s-4-6a" data-titulo="Prática 4, passo 4.6: conferir os valores dos marcos">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.6</span><span class="tempo">tempo previsto da Prática 4: 55 min</span></p>
+  <h2 tabindex="-1">Aplicar o log binário: confira os valores antes</h2>
+  <p class="faz"><strong>O que faz:</strong> carrega os valores do <code>marcos.txt</code> e mostra, numa frase, o trecho do log que vai ser aplicado.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>source ~/backup_techstore/marcos.txt
+echo "Aplicar de $ARQ_A posição $POS_A até $ARQ_B posição $POS_B"</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Uma frase como <code>Aplicar de binlog.000003 posição 1577 até binlog.000003 posição ...</code>, com os seus valores. A posição de B deve ser maior que a de A quando o arquivo é o mesmo.</p></div>
+  <div class="nota"><span class="rot">Escolha o próximo slide</span>
+    <ul>
+      <li>Se <code>ARQ_A</code> e <code>ARQ_B</code> forem <strong>iguais</strong> (o caso mais comum): siga para o slide “mesmo arquivo de log”.</li>
+      <li>Se forem <strong>diferentes</strong>: pule para o slide “arquivos de log diferentes”.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide" id="s-4-6b" data-titulo="Prática 4, passo 4.6: mesmo arquivo de log">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.6 (caso 1: mesmo arquivo)</span><span class="tempo">tempo previsto da Prática 4: 55 min</span></p>
+  <h2 tabindex="-1">Aplicar o log: mesmo arquivo de log</h2>
+  <p>Use este comando se <code>ARQ_A</code> e <code>ARQ_B</code> forem <strong>iguais</strong>.</p>
+  <p class="faz"><strong>O que faz:</strong> lê o log binário da posição do marco A até a do marco B, só da base <code>loja_teste</code>, e envia esses eventos ao <code>mysql</code>.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>docker exec mysql-$USER mysqlbinlog --database=loja_teste \
+  --start-position="$POS_A" --stop-position="$POS_B" \
+  /var/lib/mysql/"$ARQ_A" \
+| docker exec -i -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot loja_teste</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Nenhuma mensagem. O terminal volta ao prompt. A conferência vem no passo 4.7.</p></div>
+  <div class="perigo"><span class="rot">Rode este comando uma vez só</span><p>Se precisar repetir, volte ao 4.4: a base é apagada de novo e restaurada do zero, e o resultado não depende de tentativas anteriores.</p></div>
+</section>
+
+<section class="slide" id="s-4-6c" data-titulo="Prática 4, passo 4.6: arquivos de log diferentes">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.6 (caso 2: arquivos diferentes)</span><span class="tempo">tempo previsto da Prática 4: 55 min</span></p>
+  <h2 tabindex="-1">Aplicar o log: arquivos de log diferentes</h2>
+  <p>Use este comando só se <code>ARQ_A</code> e <code>ARQ_B</code> forem <strong>diferentes</strong>. Liste os dois arquivos, em ordem. O <code>--start-position</code> vale para o primeiro arquivo da lista, e o <code>--stop-position</code> vale para o último.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>docker exec mysql-$USER mysqlbinlog --database=loja_teste \
+  --start-position="$POS_A" --stop-position="$POS_B" \
+  /var/lib/mysql/"$ARQ_A" /var/lib/mysql/"$ARQ_B" \
+| docker exec -i -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot loja_teste</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Nenhuma mensagem. O terminal volta ao prompt. A conferência vem no passo 4.7.</p></div>
+  <div class="perigo"><span class="rot">Rode este comando uma vez só</span><p>Se precisar repetir, volte ao 4.4: a base é apagada de novo e restaurada do zero, e o resultado não depende de tentativas anteriores.</p></div>
+</section>
+
+<section class="slide" id="s-4-7a" data-titulo="Prática 4, passo 4.7: conferir a recuperação">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.7</span><span class="tempo">tempo previsto da Prática 4: 55 min</span></p>
+  <h2 tabindex="-1">Conferir a recuperação</h2>
+  <p class="faz"><strong>O que faz:</strong> conta a base recuperada, compara com a contagem B e mostra a hora de fim.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>contar | tee ~/backup_techstore/contagem_final.txt
+diff ~/backup_techstore/contagem_B.txt ~/backup_techstore/contagem_final.txt &amp;&amp; echo "RECUPERAÇÃO OK: a base voltou ao marco B"
+date +%T</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>A contagem, depois a linha <code>RECUPERAÇÃO OK: a base voltou ao marco B</code> e, por último, a hora atual. A base deve estar igual ao marco B, sem o erro.</p></div>
+  <div class="alerta"><span class="rot">Se o diff mostrar diferenças</span><p>Não apague nada: veja o slide “Se algo der errado” (botão no topo da tela).</p></div>
+</section>
+
+<section class="slide" id="s-4-7b" data-titulo="Prática 4, passo 4.7: ver o pedido do cliente novo">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.7</span><span class="tempo">tempo previsto da Prática 4: 55 min</span></p>
+  <h2 tabindex="-1">Ver o pedido do cliente novo</h2>
+  <p class="faz"><strong>O que faz:</strong> mostra o cliente da Aula 13 e o pedido dele em tabela formatada (<code>-t</code> no cliente <code>mysql</code>, sem <code>-N</code>).</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot -t loja_teste -e "
+SELECT c.nome, p.id AS pedido, p.status
+FROM clientes c JOIN pedidos p ON p.cliente_id = c.id
+WHERE c.email = 'aula13.$USER@exemplo.com';"</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Uma tabela com bordas e as colunas <code>nome</code>, <code>pedido</code> e <code>status</code>: uma linha com <code>Cliente Aula 13</code>, o número do pedido e o status <code>Processando</code>.</p></div>
+  <div class="nota"><span class="rot">Tempo do incidente</span><p>Anote a hora de início e a de fim: é o tempo do incidente inteiro, da perda à volta. Ele é o que a diretoria quer saber.</p></div>
+</section>
+
+<section class="slide" id="s-4-8" data-titulo="Prática 4, passo 4.8: copiar o log binário para fora">
+  <p class="etapa"><span class="tag">Prática 4 — passo 4.8</span><span class="tempo">tempo previsto da Prática 4: 55 min</span></p>
+  <h2 tabindex="-1">Copiar o log binário para fora</h2>
+  <p>Os binlogs ficam no volume do contêiner. Se o volume fosse perdido, o log iria junto com o backup.</p>
+  <p class="faz"><strong>O que faz:</strong> fecha o arquivo de log atual e copia os arquivos dos marcos A e B para a cópia externa.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>docker exec -e MYSQL_PWD="$SENHA" mysql-$USER mysql -uroot -e "FLUSH BINARY LOGS;"
+source ~/backup_techstore/marcos.txt
+docker cp mysql-$USER:/var/lib/mysql/"$ARQ_A" ~/copia_externa/
+[ "$ARQ_B" != "$ARQ_A" ] &amp;&amp; docker cp mysql-$USER:/var/lib/mysql/"$ARQ_B" ~/copia_externa/
+ls -lh ~/copia_externa/</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>A lista da pasta <code>copia_externa</code>, com o backup <code>.sql</code> e o arquivo de log do marco A (e o do marco B, se for outro).</p></div>
+  <div class="nota"><span class="rot">Para a Entrega 3</span><p>Com que frequência a TechStore precisa copiar o log binário para fora do servidor para cumprir o RPO definido na Aula 12?</p></div>
+</section>
+
+<!-- ===================== PRÁTICA 5 ===================== -->
+<section class="slide" id="s-5-1" data-titulo="Prática 5, passo 5.1: a senha fora do script">
+  <p class="etapa"><span class="tag">Prática 5 — passo 5.1</span><span class="tempo">tempo previsto da Prática 5: 15 min</span></p>
+  <h2 tabindex="-1">A senha fora do script</h2>
+  <p>Uma rotina de backup não pode depender de alguém lembrar de digitar comandos. Vamos criar um script que verifica o próprio resultado.</p>
+  <p>Até agora você passou a senha assim: <code>-e MYSQL_PWD="$SENHA"</code>. Enquanto o comando roda, a senha fica visível para qualquer usuário da VM no comando <code>ps</code>.</p>
+  <p class="faz"><strong>O que faz:</strong> grava a senha num arquivo que só você lê. No script, ela entra no <code>docker exec</code> pelo ambiente, sem aparecer na linha de comando.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>mkdir -p ~/bin
+( umask 077; printf '%s' "$SENHA" &gt; ~/.techstore_backup_pwd )
+ls -l ~/.techstore_backup_pwd</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Uma linha do <code>ls</code> começando por <code>-rw-------</code>: só você lê e escreve.</p></div>
+</section>
+
+<section class="slide" id="s-5-2" data-titulo="Prática 5, passo 5.2: criar o script">
+  <p class="etapa"><span class="tag">Prática 5 — passo 5.2</span><span class="tempo">tempo previsto da Prática 5: 15 min</span></p>
+  <h2 tabindex="-1">Criar o script</h2>
+  <p class="faz"><strong>O que faz:</strong> cria o arquivo <code>~/bin/backup_techstore.sh</code>. O script faz o backup, só aceita o arquivo se ele terminar com <code>Dump completed</code>, grava o código SHA-256 e apaga backups com mais de 7 dias.</p>
+  <p>Cole o bloco inteiro de uma vez.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>cat &gt; ~/bin/backup_techstore.sh &lt;&lt;'FIM'
+#!/bin/bash
+# Backup lógico da loja_teste: verifica o arquivo e guarda 7 dias
+set -euo pipefail
+umask 077
+
+DESTINO="$HOME/backup_techstore"
+CONTEINER="mysql-$(id -un)"
+ARQ="$DESTINO/loja_teste_$(date +%F_%H%M).sql"
+MYSQL_PWD=$(cat "$HOME/.techstore_backup_pwd")
+export MYSQL_PWD
+
+mkdir -p "$DESTINO"
+docker exec -e MYSQL_PWD "$CONTEINER" mysqldump -uroot \
+  --single-transaction --routines --triggers --events --source-data=2 \
+  loja_teste &gt; "$ARQ.tmp"
+
+# Só aceita o backup se o mysqldump chegou até o fim
+ultima=$(tail -n 1 "$ARQ.tmp")
+if [[ "$ultima" == *"Dump completed"* ]]; then
+  mv "$ARQ.tmp" "$ARQ"
+  sha256sum "$ARQ" &gt; "$ARQ.sha256"
+  echo "$(date '+%F %T') OK: $ARQ"
+else
+  echo "$(date '+%F %T') FALHA: backup incompleto em $ARQ.tmp" &gt;&amp;2
+  exit 1
+fi
+
+find "$DESTINO" -name 'loja_teste_*.sql*' -mtime +7 -delete
+FIM
+chmod 700 ~/bin/backup_techstore.sh</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>Nenhuma mensagem. O terminal volta ao prompt.</p></div>
+</section>
+
+<section class="slide" id="s-5-3" data-titulo="Prática 5, passo 5.3: executar">
+  <p class="etapa"><span class="tag">Prática 5 — passo 5.3</span><span class="tempo">tempo previsto da Prática 5: 15 min</span></p>
+  <h2 tabindex="-1">Executar o script</h2>
+  <p class="faz"><strong>O que faz:</strong> roda o script uma vez, à mão.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>~/bin/backup_techstore.sh</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>A última linha começa com a data e a hora e traz <code>OK:</code> seguido do caminho do novo backup.</p></div>
+  <div class="alerta"><span class="rot">Se trouxer FALHA</span><p>O backup incompleto não foi aceito: leia a mensagem e volte ao passo 1.2.</p></div>
+</section>
+
+<section class="slide" id="s-5-4" data-titulo="Prática 5, passo 5.4: agendar para daqui a 3 minutos">
+  <p class="etapa"><span class="tag">Prática 5 — passo 5.4</span><span class="tempo">tempo previsto da Prática 5: 15 min</span><span class="tempo">espera: 3 min</span></p>
+  <h2 tabindex="-1">Agendar para daqui a 3 minutos</h2>
+  <p>Em produção, a linha seria <code>0 2 * * *</code> (todo dia às 2h). Para ver o agendamento funcionar sem deixar a rotina ativa, o comando abaixo cria <strong>uma</strong> execução, daqui a 3 minutos.</p>
+  <p class="faz"><strong>O que faz:</strong> calcula minuto, hora, dia e mês de daqui a 3 minutos e acrescenta a linha do script ao seu <code>crontab</code>, sem abrir editor.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>MIN=$(date -d '+3 min' +%-M); HOR=$(date -d '+3 min' +%-H)
+DIA=$(date -d '+3 min' +%-d); MES=$(date -d '+3 min' +%-m)
+( crontab -l 2&gt;/dev/null; echo "$MIN $HOR $DIA $MES * \$HOME/bin/backup_techstore.sh &gt;&gt; \$HOME/backup_techstore/log.txt 2&gt;&amp;1" ) | crontab -
+crontab -l</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span><p>O <code>crontab -l</code> mostra uma linha com quatro números e um <code>*</code>, seguidos de <code>$HOME/bin/backup_techstore.sh</code> e do redirecionamento para <code>log.txt</code>.</p></div>
+  <p>Os cinco campos são minuto, hora, dia do mês, mês e dia da semana.</p>
+  <div class="nota"><span class="rot">Enquanto espera os 3 minutos</span><p>Responda ao checkpoint. <a href="#s-checkpoint" data-ir="s-checkpoint">Ir para o checkpoint</a> e depois volte ao passo 5.5.</p></div>
+</section>
+
+<section class="slide" id="s-5-5" data-titulo="Prática 5, passo 5.5: conferir e remover">
+  <p class="etapa"><span class="tag">Prática 5 — passo 5.5</span><span class="tempo">tempo previsto da Prática 5: 15 min</span></p>
+  <h2 tabindex="-1">Conferir e remover o agendamento</h2>
+  <p>Rode depois dos 3 minutos.</p>
+  <p class="faz"><strong>O que faz:</strong> mostra o log da execução agendada, os arquivos mais recentes da pasta e remove a linha do backup do <code>crontab</code>.</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>cat ~/backup_techstore/log.txt
+ls -lh ~/backup_techstore/ | tail -n 3
+crontab -l | grep -v backup_techstore.sh | crontab -
+crontab -l</code></pre></div>
+  <div class="ver"><span class="rot">O que você deve ver</span>
+    <ul>
+      <li>No <code>log.txt</code>: uma linha com data, hora e <code>OK:</code>.</li>
+      <li>No <code>ls</code>: os arquivos mais recentes, com o novo <code>.sql</code> e o <code>.sha256</code> dele.</li>
+      <li>O último <code>crontab -l</code> <strong>não</strong> deve mostrar a linha do backup.</li>
+    </ul>
+  </div>
+  <div class="alerta"><span class="rot">Não deixe a rotina ativa</span><p>A VM é compartilhada, e a rotina não pode ficar ativa depois da aula.</p></div>
+</section>
+
+<!-- ===================== SE ALGO DER ERRADO ===================== -->
+<section class="slide" id="s-socorro" data-titulo="Se algo der errado">
+  <p class="etapa"><span class="tag">Consulta</span><span class="tempo">use sempre que precisar</span></p>
+  <h2 tabindex="-1">Se algo der errado</h2>
+  <div class="nota"><span class="rot">Regra de ouro</span><p>Errou em qualquer passo da Prática 4? Volte ao 4.4 (apagar, restaurar e aplicar o binlog). O backup e os marcos continuam valendo, e você pode refazer quantas vezes precisar. <a href="#s-4-4" data-ir="s-4-4">Ir para o passo 4.4</a></p></div>
+  <div class="tab"><table><thead><tr><th scope="col">Mensagem ou sintoma</th><th scope="col">O que fazer</th></tr></thead><tbody>
+<tr><td><code>Access denied for user 'root'</code></td><td>A variável <code>SENHA</code> está vazia. Rode o <code>read -s</code> de novo.</td></tr>
+<tr><td><code>Binlogging on server not active</code> no <code>mysqldump</code></td><td>O log binário está desligado. Apague o <code>.sql</code> vazio e chame o docente.</td></tr>
+<tr><td>O <code>.sql</code> tem 0 bytes ou não termina com <code>Dump completed</code></td><td>O backup falhou. Apague o arquivo com <code>rm "$BKP"</code> e refaça o 1.2.</td></tr>
+<tr><td><code>Duplicate entry 'aula13...'</code> no 3.1</td><td>O bloco já tinha rodado. Siga em frente.</td></tr>
+<tr><td><code>ERROR 1007 ... database exists</code> no 2.2 ou no 4.5</td><td>A base já existia. O comando <code>DROP DATABASE IF EXISTS</code> ou o passo 4.4 resolve.</td></tr>
+<tr><td><code>ERROR 1049 Unknown database 'loja_teste'</code></td><td>Faltou o <code>CREATE DATABASE</code> do 4.5.</td></tr>
+<tr><td><code>mysqlbinlog: File ... not found</code></td><td>Nome do arquivo de log errado. Confira com <code>cat ~/backup_techstore/marcos.txt</code> e <code>SHOW BINARY LOGS</code>.</td></tr>
+<tr><td><code>Could not read entry at offset ...</code></td><td>Posição errada. Confira <code>POS_A</code> e <code>POS_B</code> em <code>marcos.txt</code>.</td></tr>
+<tr><td><code>Duplicate entry</code> ou <code>Could not execute Write_rows event</code> no 4.6</td><td>O binlog foi aplicado sobre dados que já estavam lá. Volte ao 4.4.</td></tr>
+<tr><td>Depois do 4.6, todos os pedidos estão <code>Cancelado</code></td><td>O marco B foi registrado depois do erro. Chame o docente.</td></tr>
+<tr><td>Depois do 4.6, o <code>Cliente Aula 13</code> não aparece</td><td><code>POS_A</code> e <code>POS_B</code> trocados, ou o <code>marcos.txt</code> tem valores de outro backup. Confira o arquivo.</td></tr>
+<tr><td><code>crontab -e</code> abriu um editor que você não conhece</td><td>Saia sem salvar. No <code>vim</code>: <code>Esc</code>, depois <code>:q!</code> e <code>Enter</code>. Use os comandos do 5.4, que não abrem editor.</td></tr>
+</tbody></table></div>
+</section>
+
+<!-- ===================== DESAFIO ===================== -->
+<section class="slide" id="s-desafio" data-titulo="Desafio: pular só o erro (para quem terminar antes)">
+  <p class="etapa"><span class="tag">Desafio</span><span class="tempo">para quem terminar antes</span></p>
+  <h2 tabindex="-1">Desafio: pular só o erro</h2>
+  <p>Refaça a recuperação com um passo a mais. Depois do erro (4.2), registre um pedido novo e anote dois marcos:</p>
+  <ul>
+    <li><strong>marco C:</strong> <code>SHOW BINARY LOG STATUS</code> logo <strong>depois</strong> do <code>UPDATE</code> sem <code>WHERE</code>;</li>
+    <li><strong>marco D:</strong> <code>SHOW BINARY LOG STATUS</code> logo antes do <code>DROP DATABASE</code>.</li>
+  </ul>
+  <p>Na recuperação, aplique dois trechos: de A até B e de C até D.</p>
+  <div class="ver"><span class="rot">Ao final</span><p>A base deve ter o pedido novo e não deve ter o erro.</p></div>
+  <div class="nota"><span class="rot">Para explicar</span><p>Por que o trecho entre B e C ficou de fora?</p></div>
+</section>
+
+<!-- ===================== CHECKPOINT ===================== -->
+<section class="slide" id="s-checkpoint" data-titulo="Checkpoint de saída">
+  <p class="etapa"><span class="tag">Checkpoint de saída</span><span class="tempo">tempo previsto: 10 min</span></p>
+  <h2 tabindex="-1">Checkpoint de saída</h2>
+  <p>Responda por escrito:</p>
+  <ol>
+    <li>O backup do marco A restaura o estado de quando foi feito. O que o log binário acrescenta?</li>
+    <li>Por que o <code>--stop-position</code> aponta para o marco B, e não para o erro?</li>
+    <li>Se a contagem da Prática 2 não bater com a contagem A, o que a equipe faz antes de aceitar o backup?</li>
+    <li>Por que a senha do backup não deve ficar escrita dentro do script?</li>
+  </ol>
+  <div class="nota"><span class="rot">Para o caderno</span><p>Copie o conteúdo de <code>marcos.txt</code> e o resultado dos dois <code>diff</code>. Eles entram no plano da Entrega 3.</p></div>
+  <p><a href="#s-5-5" data-ir="s-5-5">Voltar ao passo 5.5 (conferir e remover o agendamento)</a></p>
+</section>
+
+<!-- ===================== REFLEXÃO ===================== -->
+<section class="slide" id="s-reflexao" data-titulo="Reflexão">
+  <p class="etapa"><span class="tag">Reflexão</span></p>
+  <h2 tabindex="-1">Reflexão</h2>
+  <p>Seu backup de hoje inclui os usuários que você criou na Aula 08? Verifique:</p>
+  <div class="bloco"><span class="rotulo">bash</span><pre class="cmd" tabindex="0"><code>grep -c "CREATE USER" "$BKP"</code></pre></div>
+  <p>Depois, confira se eles ainda existem depois do <code>DROP DATABASE</code>, com <code>SELECT user, host FROM mysql.user;</code>.</p>
+  <p>O que isso diz sobre o que o seu plano da Entrega 3 precisa copiar além do dump?</p>
+  <div class="alerta"><span class="rot">Antes de sair</span><p>Confira se o último <code>crontab -l</code> não mostra a linha do backup.</p></div>
+</section>
+
+</main>
+
+<nav class="nav" aria-label="Navegação entre slides">
+  <div class="in">
+    <button type="button" class="ant" id="ant" aria-label="Slide anterior">← <span class="txt">Anterior</span></button>
+    <label for="indice">Ir para o slide</label>
+    <select id="indice"></select>
+    <button type="button" class="prox" id="prox" aria-label="Próximo slide"><span class="txt">Próximo</span> →</button>
+  </div>
+</nav>
+<div id="aviso" class="pular" aria-live="polite" role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var total = slides.length;
+  var atual = 0;
+  var contador = document.getElementById("contador");
+  var barra = document.getElementById("barra");
+  var preench = barra.querySelector("span");
+  var indice = document.getElementById("indice");
+  var ant = document.getElementById("ant");
+  var prox = document.getElementById("prox");
+  var aviso = document.getElementById("aviso");
+
+  barra.setAttribute("aria-valuemax", String(total));
+  slides.forEach(function(s, i){
+    s.setAttribute("role", "group");
+    s.setAttribute("aria-roledescription", "slide");
+    s.setAttribute("aria-label", (i + 1) + " de " + total + ": " + s.getAttribute("data-titulo"));
+    var o = document.createElement("option");
+    o.value = String(i);
+    o.textContent = (i + 1) + ". " + s.getAttribute("data-titulo");
+    indice.appendChild(o);
+  });
+
+  function porId(id){
+    for (var i = 0; i < total; i++) { if (slides[i].id === id) { return i; } }
+    return -1;
+  }
+
+  function mostrar(i, focar){
+    if (i < 0) { i = 0; }
+    if (i > total - 1) { i = total - 1; }
+    atual = i;
+    slides.forEach(function(s, k){ s.hidden = (k !== i); });
+    contador.textContent = "Slide " + (i + 1) + " de " + total;
+    preench.style.width = ((i + 1) / total * 100) + "%";
+    barra.setAttribute("aria-valuenow", String(i + 1));
+    barra.setAttribute("aria-valuetext", "Slide " + (i + 1) + " de " + total);
+    indice.value = String(i);
+    ant.disabled = (i === 0);
+    prox.disabled = (i === total - 1);
+    var novo = "#" + slides[i].id;
+    if (location.hash !== novo) {
+      try { history.replaceState(null, "", novo); } catch (e) { /* sem histórico */ }
+    }
+    window.scrollTo(0, 0);
+    if (focar) {
+      var h = slides[i].querySelector("h1, h2");
+      if (h) { try { h.focus({preventScroll: true}); } catch (e) { h.focus(); } }
+    }
+  }
+
+  ant.addEventListener("click", function(){ mostrar(atual - 1, true); });
+  prox.addEventListener("click", function(){ mostrar(atual + 1, true); });
+  indice.addEventListener("change", function(){ mostrar(parseInt(indice.value, 10), true); });
+
+  document.addEventListener("click", function(e){
+    var a = e.target.closest ? e.target.closest("[data-ir]") : null;
+    if (!a) { return; }
+    var k = porId(a.getAttribute("data-ir"));
+    if (k >= 0) { e.preventDefault(); mostrar(k, true); }
+  });
+
+  document.addEventListener("keydown", function(e){
+    if (e.altKey || e.ctrlKey || e.metaKey) { return; }
+    var t = e.target;
+    var tag = t && t.tagName ? t.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "select" || tag === "textarea" || tag === "pre" || (t && t.isContentEditable)) { return; }
+    if (e.key === "ArrowRight" || e.key === "PageDown") { e.preventDefault(); mostrar(atual + 1, true); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); mostrar(atual - 1, true); }
+    else if (e.key === "Home") { e.preventDefault(); mostrar(0, true); }
+    else if (e.key === "End") { e.preventDefault(); mostrar(total - 1, true); }
+  });
+
+  window.addEventListener("hashchange", function(){
+    var k = porId(location.hash.slice(1));
+    if (k >= 0 && k !== atual) { mostrar(k, true); }
+  });
+
+  /* botões Copiar */
+  function copiarTexto(txt){
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(txt);
+    }
+    return new Promise(function(ok, falha){
+      var ta = document.createElement("textarea");
+      ta.value = txt;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      var deu = false;
+      try { deu = document.execCommand("copy"); } catch (e) { deu = false; }
+      document.body.removeChild(ta);
+      if (deu) { ok(); } else { falha(new Error("cópia indisponível")); }
+    });
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("pre.cmd"), function(pre){
+    pre.setAttribute("aria-label", "Bloco de comando");
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "copiar";
+    b.textContent = "Copiar";
+    b.setAttribute("aria-label", "Copiar comando");
+    b.addEventListener("click", function(){
+      var txt = pre.querySelector("code").textContent;
+      copiarTexto(txt).then(function(){
+        b.textContent = "Copiado!";
+        aviso.textContent = "Comando copiado.";
+      }, function(){
+        b.textContent = "Selecione e copie";
+        aviso.textContent = "Não foi possível copiar. Selecione o texto e copie.";
+      });
+      setTimeout(function(){ b.textContent = "Copiar"; aviso.textContent = ""; }, 2000);
+    });
+    pre.parentNode.appendChild(b);
+  });
+
+  var inicial = porId(location.hash.slice(1));
+  mostrar(inicial >= 0 ? inicial : 0, false);
+})();
+</script>
+</body>
+</html>
